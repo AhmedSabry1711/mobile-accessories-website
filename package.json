@@ -1,0 +1,22 @@
+{
+  "name": "mobi-boost",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Mobi Boost - Mobile accessories e-commerce (React + PHP REST API + MongoDB Atlas)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve:api": "php -S localhost:8000"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}

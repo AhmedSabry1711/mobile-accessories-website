@@ -1,0 +1,12 @@
+# Mobi Boost — production .htaccess for Hostinger public_html
+# Place this file in public_html/ (next to index.html and the api/ folder).
+
+RewriteEngine On
+RewriteBase /
+
+# Serve existing files/directories directly (static assets, /api, /uploads)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Everything else -> React SPA entry point (client-side routing)
+RewriteRule ^ index.html [L]
