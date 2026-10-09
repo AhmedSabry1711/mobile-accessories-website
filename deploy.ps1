@@ -31,7 +31,38 @@ New-Item -ItemType Directory -Path (Join-Path $stage "uploads") | Out-Null
 Set-Content -Path (Join-Path $stage "uploads\.gitkeep") -Value "" -Encoding Ascii
 
 if (Test-Path $zip) { Remove-Item $zip -Force }
-Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
+
+# Zip with forward-slash entry names (Compress-Archive writes "\" on Windows,
+# which breaks extraction on Linux/Hostinger). Use .NET ZipArchive directly.
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+$prefix = $stage.TrimEnd('\') + '\'
+$fs = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
+$archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
+
+# Keep empty folders (e.g. uploads/) as explicit entries ending with '/'.
+foreach ($dir in [System.IO.Directory]::GetDirectories($stage, '*', [System.IO.SearchOption]::AllDirectories)) {
+    if (([System.IO.Directory]::GetFileSystemEntries($dir) | Measure-Object).Count -eq 0) {
+        $rel = $dir.Substring($prefix.Length).Replace('\', '/') + '/'
+        [void]$archive.CreateEntry($rel)
+    }
+}
+
+foreach ($file in [System.IO.Directory]::GetFiles($stage, '*', [System.IO.SearchOption]::AllDirectories)) {
+    $rel = $file.Substring($prefix.Length).Replace('\', '/')
+    $entry = $archive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+    $stream = $entry.Open()
+    try {
+        $bytes = [System.IO.File]::ReadAllBytes($file)
+        $stream.Write($bytes, 0, $bytes.Length)
+    } finally {
+        $stream.Dispose()
+    }
+}
+
+$archive.Dispose()
+$fs.Dispose()
 Remove-Item $stage -Recurse -Force
 
 Write-Host "==> Done: $zip" -ForegroundColor Green

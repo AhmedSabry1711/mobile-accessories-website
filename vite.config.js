@@ -21,6 +21,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    // deploy.ps1 writes mobiboost-deploy.zip into the project root; watching that
+    // binary while it is being written crashes Vite on Windows (EBUSY).
+    watch: {
+      ignored: ['**/mobiboost-deploy.zip'],
+    },
   },
   build: {
     outDir: 'dist',
