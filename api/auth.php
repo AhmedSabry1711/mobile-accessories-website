@@ -25,10 +25,10 @@ if ($method === 'POST') {
         fail('Username and password are required', 400);
     }
 
-$user = mongo_find_one('users', ['username' => $username]);
+    $user = mongo_find_one('users', ['username' => $username]);
     if (!$user || !password_verify($password, (string)$user['passwordHash'])) {
         fail('Invalid credentials', 401);
-}
+    }
 
     ok([
         'token' => create_token($user),
