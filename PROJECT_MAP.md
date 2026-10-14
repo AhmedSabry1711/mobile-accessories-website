@@ -1,14 +1,18 @@
 # Mobi Boost — PROJECT MAP
 
 > Full-stack e-commerce app for mobile accessories.
-> React (Vite) frontend · PHP REST API · **MongoDB Atlas or MySQL/MariaDB (choose one)**.
+> React (Vite) frontend · PHP REST API · **  MySQL       or MySQL/MariaDB (choose one)**.
 > Deploy target: Hostinger Unlimited Web Hosting (static React files + PHP API in `public_html`).
 
-> **Database editions.** The API ships with two interchangeable storage backends that expose the
-> same helpers (`mongo_find`, `mongo_insert`, …) to the endpoints:
-> - **MongoDB** — `api/_bootstrap.php` + `api/lib/store.php` (needs `ext-mongodb`).
-> - **MySQL/PDO** — the drop-in files in `api-mysql/` (no extension required; works on standard
->   shared hosting). See [`api-mysql/README.md`](./api-mysql/README.md) and the Deployment section.
+> **Database editions.** The API exposes one storage backend — **MySQL/MariaDB via PDO** — through
+> the Mongo-style helpers (`mongo_find`, `mongo_insert`, …) that every endpoint calls, so no
+> endpoint knows about SQL. It needs no PHP extension beyond the standard `pdo_mysql`.
+> - **MySQL/PDO** — `api/_bootstrap.php` + `api/lib/store.php`, with data in normalized tables
+>   (see `api/schema.sql`). [`api-mysql/`](./api-mysql/) holds a byte-identical mirror of those
+>   files; keep the two in sync when you edit either.
+> - **MongoDB** — the same helpers can still drive Atlas via `ext-mongodb`; set `mongoUri`.
+>
+> Setting up the production database: **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
 
 ---
 
@@ -29,20 +33,19 @@
 ┌─────────────────────────────┐        ┌──────────────────────────────┐
 │  React SPA (static files)   │  /api  │  PHP REST API (no Node srv)  │
 │  built by Vite -> dist/     │───────>│  plain .php scripts, JSON    │
-│  served from public_html/   │        │  MongoDB Atlas driver        │
+│  served from public_html/   │        │  PDO                         │
 └─────────────────────────────┘        └──────────────┬───────────────┘
-                                                      │ TLS / SRV
+                                                      │ TCP 3306 
                                                ┌──────▼───────┐
-                                               │ MongoDB Atlas│
+                                               │   MySQL      │
                                                └──────────────┘
 ```
 
 - **Frontend:** React 18 + Vite + React Router. All pages are static after `npm run build`.
 - **Backend:** Stateless PHP scripts (`api/*.php`). Each file requires `api/_bootstrap.php`
   (CORS, JSON headers, DB connection, helpers, admin auth). No Composer needed.
-  Two interchangeable editions:
-  - **MongoDB** (`api/_bootstrap.php`, `api/lib/store.php`) using the `ext-mongodb` driver directly.
-  - **MySQL/PDO** (`api-mysql/`) storing one JSON document per row — see its `README.md`.
+  Storage is **MySQL/PDO** — clean, normalized tables (`api/schema.sql`), no JSON blobs.
+  `api-mysql/` mirrors those files for the "edit either copy" workflow.
 - **Cart/Wishlist:** stored in the browser (localStorage). Prices, coupons, shipping and
   stock are **always re-validated server-side** before an order is created.
 - **Auth:** admin login returns an HMAC-signed token (`Bearer` header). Public storefront
@@ -161,7 +164,7 @@
 ├── dist/                      npm run build output -> upload contents to public_html/
 ├── .htaccess                  SPA fallback for public_html/
 ├── package.json, vite.config.js, index.html
-└── README.md, PROJECT_MAP.md
+└── README.md, PROJECT_MAP.md, HOSTINGER-SQL-SETUP.md
 ```
 
 ## Data Model (database `mobi_boost`)
@@ -212,21 +215,21 @@
 
 ## Deployment to Hostinger (Unlimited Plan)
 
-1. `npm install` → `npm run build` (produces `dist/`).
-2. **Pick a database edition:**
-   - **MongoDB** — in hPanel **MultiPHP INI Editor**, enable `ext-mongodb`.
-   - **MySQL/MariaDB** — no extension needed. Copy the drop-in files (step 4b) and import
-     `api-mysql/schema.sql` via phpMyAdmin.
+> 📘 Step-by-step database walkthrough (hPanel → config → phpMyAdmin import → admin account):
+> **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
+
+1. `npm install` → `npm run build` (produces `dist/`) — or just run `deploy.ps1`, which also
+   stages the API, `.htaccess` and `uploads/` into `mobiboost-deploy.zip`.
+2. **Create the MySQL database:** hPanel → Databases → MySQL Databases. Import **`api/schema.sql`**
+   in phpMyAdmin (or run `php api/migrate.php` over SSH) to create the 12 `mb_*` tables.
 3. Upload **contents of `dist/`** into `public_html/` (includes `index.html`, assets).
-4. Upload the **`api/` folder** into `public_html/api/`.
-   - **4b. MySQL edition:** copy `api-mysql/_bootstrap.php` → `api/_bootstrap.php`,
-     `api-mysql/lib/store.php` → `api/lib/store.php`, and
-     `api-mysql/lib/mongo_compat.php` → `api/lib/mongo_compat.php` (creates a new file).
+4. Upload the **`api/` folder** into `public_html/api/` — the MySQL edition is already in place.
 5. Upload **`.htaccess`** (repo root) into `public_html/` (SPA routing).
 6. Create `public_html/uploads/` (writable) for product images/ad media.
-7. Edit `public_html/api/config.php`: set `jwtSecret`; then set **either** `mongoUri` (Atlas)
-   **or** the `mysql` block (host, database, user, password, `tablePrefix`).
-8. Seed demo data once (SSH/CLI): `php public_html/api/seed.php` → admin `admin / admin123`.
+7. Edit `public_html/api/config.php`: set `jwtSecret`, `corsOrigin`, and the `mysql` block
+   (host, port, database, username, password, `tablePrefix`).
+8. Seed demo data once (SSH/CLI): `php public_html/api/seed.php` → admin `admin / admin123`
+   (or insert the admin row by hand — see the guide's step 5c).
 9. Visit the site → log into `/admin` and change the admin password immediately.
 
 ## Local Development
@@ -238,9 +241,10 @@ npm run dev                    # React on http://localhost:5173 (proxies /api)
 php api/seed.php               # seed demo data
 ```
 
-To run locally on **MySQL** instead of MongoDB: import `api-mysql/schema.sql`, copy the three
-drop-in files over `api/` (see the api-mysql README), set the `mysql` block in `api/config.php`,
-then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is enough.
+The app runs on **MySQL** by default: import `api/schema.sql` into a MySQL/MariaDB database and set
+the `mysql` block in `api/config.php`, then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is
+enough. Returning to MongoDB is still possible by pointing `mongoUri` at Atlas and enabling
+`ext-mongodb`.
 
 ## Build Tooling
 
@@ -272,5 +276,6 @@ then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is enough.
   switching via the header toggle (`src/context/UIContext.jsx`, `src/i18n/translations.js`).
   Slug URLs and wishlist sharing remain open.
 - ~~MySQL/PDO fallback driver if MongoDB extension cannot be enabled on the hosting plan.~~
-  ✅ Done — see `api-mysql/` (drop-in `_bootstrap.php` + `lib/store.php` + `lib/mongo_compat.php`,
-  `schema.sql`, verified end-to-end against MariaDB).
+  ✅ Done — MySQL/PDO is now the **primary** store: `api/_bootstrap.php` + `api/lib/store.php`
+  read and write normalized tables (`api/schema.sql`, 12 `mb_*` tables), mirrored in `api-mysql/`,
+  verified end-to-end against MariaDB.

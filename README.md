@@ -4,8 +4,8 @@ Full-stack e-commerce web app for **mobile accessories**, built for **Hostinger 
 
 - **Frontend:** React 18 + Vite (static build)
 - **Backend:** Pure PHP REST API (no Node server required)
-- **Database:** MongoDB Atlas (`ext-mongodb` driver) **or MySQL/MariaDB via PDO** — pick one at deploy time
-  (MongoDB needs no Composer; the MySQL edition is a drop-in in [`api-mysql/`](./api-mysql/))
+- **Database:** MySQL/MariaDB via PDO (clean, normalized tables) — MongoDB Atlas remains
+  supported as an alternative backend (`ext-mongodb`, no Composer needed)
 
 📋 **Progress tracking → [`PROJECT_MAP.md`](./PROJECT_MAP.md)**
 
@@ -46,13 +46,15 @@ Full-stack e-commerce web app for **mobile accessories**, built for **Hostinger 
 | Node | 18+ (build-time only) |
 
 > ⚠️ **Which database?**
-> - **MongoDB Atlas** — talks to Atlas through the official `ext-mongodb` driver
->   (`MongoDB\Driver\Manager`), so no Composer packages are needed. On Hostinger you can enable
->   PHP extensions from **hPanel → Advanced → PHP Configuration**.
-> - **MySQL/PDO** — if your plan does **not** allow the `mongodb` extension, use the drop-in
->   edition in [`api-mysql/`](./api-mysql/). It needs only `pdo_mysql` (standard on Hostinger)
->   and stores one JSON document per row. All DB access is isolated in `api/_bootstrap.php` and
->   `api/lib/store.php`, so no endpoint changes are required. See that folder's README.
+> - **MySQL/MariaDB (PDO)** — the default, and what is deployed today. It needs only
+>   `pdo_mysql` (standard on Hostinger) and stores everything in **clean, normalized tables** —
+>   one column per field, readable straight from phpMyAdmin. All DB access is isolated in
+>   `api/_bootstrap.php` and `api/lib/store.php`, so no endpoint changes are required.
+>   [`api-mysql/`](./api-mysql/) holds a byte-identical mirror of those files to copy back if you
+>   edit either copy. Step-by-step setup: **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
+> - **MongoDB Atlas** — still supported alongside it: enable `ext-mongodb`
+>   (hPanel → Advanced → PHP Configuration) and point `mongoUri` at your Atlas cluster. The API
+>   talks to it through `MongoDB\Driver\Manager`, so no Composer packages are needed.
 
 ---
 
@@ -77,14 +79,16 @@ npm run dev        # http://localhost:5173  (proxies /api -> :8000)
 
 Default admin login after seeding: **`admin` / `admin123`** (change it immediately).
 
-> **Using MySQL locally instead of MongoDB:** import `api-mysql/schema.sql` into a MySQL/MariaDB
-> database, copy the three drop-in files from `api-mysql/` over `api/` (see
-> [`api-mysql/README.md`](./api-mysql/README.md)), and set the `mysql` block in `api/config.php`.
-> XAMPP's MariaDB with `pdo_mysql` is all you need — no `ext-mongodb`.
+> **Local database:** MySQL/MariaDB is the default — import `api/schema.sql` into a MySQL/MariaDB
+> database and set the `mysql` block in `api/config.php`. XAMPP's MariaDB with `pdo_mysql` is all
+> you need, no `ext-mongodb`. See [`api-mysql/README.md`](./api-mysql/README.md).
 
 ---
 
 ## Production deployment (Hostinger)
+
+> 🧭 **Setting up the MySQL database?** The connection + schema + admin-account flow is written
+> out click-by-click in **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
 
 ### From this repository (quickest)
 The repository is fully self-contained (React + PHP, MySQL edition already in
@@ -102,15 +106,14 @@ The repository is fully self-contained (React + PHP, MySQL edition already in
 
 1. **Build** the frontend: `npm install && npm run build` → outputs `dist/`.
 2. **Choose your database:**
+   - **MySQL/MariaDB (default)** → nothing to install beyond `pdo_mysql`. Create the database in
+     **hPanel → Databases → MySQL Databases**, then import **`api/schema.sql`** in phpMyAdmin.
+     Full walkthrough with screenshots-level detail: **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
    - **MongoDB** → enable `ext-mongodb` in hPanel for your PHP version, and have an Atlas
      connection string ready.
-   - **MySQL/MariaDB** → no extension needed. Create a database (phpMyAdmin) and import
-     `api-mysql/schema.sql`.
 3. Upload the **contents of `dist/`** into `public_html/` (this puts `index.html` and `assets/` at the web root).
-4. Upload the **`api/` folder** into `public_html/api/`.
-   - **MySQL edition:** also copy `api-mysql/_bootstrap.php` → `api/_bootstrap.php`,
-     `api-mysql/lib/store.php` → `api/lib/store.php`, and
-     `api-mysql/lib/mongo_compat.php` → `api/lib/mongo_compat.php`.
+4. Upload the **`api/` folder** into `public_html/api/` — the MySQL edition is already baked in,
+   so there is nothing to copy over it.
 5. Upload the repo's **`.htaccess`** into `public_html/` (enables React client-side routing).
 6. Create a writable **`public_html/uploads/`** folder for product images and ad media.
 7. Edit **`public_html/api/config.php`**:

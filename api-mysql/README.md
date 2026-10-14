@@ -1,25 +1,26 @@
-# Mobi Boost — MySQL/PDO API edition
+# Mobi Boost — MySQL/PDO storage layer
 
-This folder is a **drop-in replacement** for the MongoDB-based API. Use it when
-your host (e.g. Hostinger shared hosting) provides MySQL but **not** the
-`mongodb` PHP extension.
+This folder is the **mirror** of the live MySQL storage files in `../api/`. The API
+already runs on MySQL/PDO, so there is nothing to "swap in" — this copy exists so
+the storage layer can be reviewed as a unit and so the two stay easy to diff.
 
-The public/admin endpoints in `../api/` don't change — only these files do:
+Keep the copies **byte-identical** when you edit either one:
 
-| File in `api-mysql/`        | Copy over                  | Purpose                                          |
+| File in `api-mysql/`        | Mirrors                    | Purpose                                          |
 | --------------------------- | -------------------------- | ------------------------------------------------ |
 | `_bootstrap.php`            | `api/_bootstrap.php`       | MySQL/PDO connection + storage helpers           |
 | `lib/store.php`             | `api/lib/store.php`        | Cart/coupon/stock logic (dates as ISO strings)   |
-| `lib/mongo_compat.php`      | `api/lib/mongo_compat.php` | BSON value-type polyfills (new file)             |
-| `schema.sql`                | —                          | Import once to create the tables                 |
+| `lib/mongo_compat.php`      | `api/lib/mongo_compat.php` | BSON value-type polyfills                        |
+| `schema.sql`                | `api/schema.sql`           | Creates the 12 normalized tables                 |
 
-The live copies already sit in `api/` — keep them byte-identical when you edit
-either one. `api/migrate.php` is the one-off upgrade script (see below).
+`api/migrate.php` is the one-off upgrade script for databases created by the older
+document schema (see below). For the full Hostinger walkthrough see
+[`../HOSTINGER-SQL-SETUP.md`](../HOSTINGER-SQL-SETUP.md).
 
-## Activate it
+## Set it up
 
-1. **Add MySQL credentials** to `api/config.php` (a `'mysql' => [...]` block is
-   already included). Example:
+1. **Add MySQL credentials** to `api/config.php` (the `'mysql' => [...]` block is
+   already there). Example:
 
    ```php
    'mysql' => [
@@ -35,18 +36,11 @@ either one. `api/migrate.php` is the one-off upgrade script (see below).
 2. **Create the tables** — import `schema.sql` via phpMyAdmin, or:
 
    ```bash
-   mysql -u USER -p DATABASE < api-mysql/schema.sql
+   mysql -u USER -p DATABASE < api/schema.sql
    ```
 
-3. **Swap the files**:
-
-   ```bash
-   cp api-mysql/_bootstrap.php        api/_bootstrap.php
-   cp api-mysql/lib/store.php         api/lib/store.php
-   cp api-mysql/lib/mongo_compat.php  api/lib/mongo_compat.php
-   ```
-
-4. **Seed the demo catalog**:
+3. **Seed the demo catalog** (optional — skip it if you'd rather add your own
+   products; you'll still need an admin account, see the guide):
 
    ```bash
    php api/seed.php
