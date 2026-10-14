@@ -13,8 +13,7 @@ return [
     // Database name in Atlas
     'dbName' => getenv('MONGO_DB') ?: 'mobi_boost',
 
-    // MySQL connection (used by the MySQL/PDO edition in api-mysql/).
-    // Ignored by the MongoDB edition. See api-mysql/README.md.
+    // MySQL connection — this is the live storage layer (see api-mysql/README.md).
     'mysql' => [
         'host' => getenv('MYSQL_HOST') ?: 'localhost',
         'port' => (int)(getenv('MYSQL_PORT') ?: 3306),
