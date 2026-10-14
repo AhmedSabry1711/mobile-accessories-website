@@ -13,23 +13,30 @@ function systemTheme() {
 
 export function UIProvider({ children }) {
   const [theme, setTheme] = useState(() => localStorage.getItem('mb_theme') || systemTheme());
+  const [lang, setLang] = useState(() => localStorage.getItem('mb_lang') || 'ar');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang === 'ar' ? 'ar-EG' : 'en-US';
     localStorage.setItem('mb_theme', theme);
-  }, [theme]);
+    localStorage.setItem('mb_lang', lang);
+  }, [theme, lang]);
 
   const toggleTheme = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), []);
-  const t = useCallback((key, vars) => translate(key, vars), []);
+  const toggleLang = useCallback(() => setLang((l) => (l === 'ar' ? 'en' : 'ar')), []);
+  const t = useCallback((key, vars) => translate(key, vars, lang), [lang]);
 
   const value = useMemo(
     () => ({
       theme,
       toggleTheme,
+      lang,
+      toggleLang,
       t,
-      locale: 'en-US',
+      locale: lang === 'ar' ? 'ar-EG' : 'en-US',
     }),
-    [theme, toggleTheme, t]
+    [theme, toggleTheme, lang, toggleLang, t]
   );
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
+import { localizeColor, localizeName } from '../i18n/catalog.js';
 import { IconTrash, IconMinus, IconPlus, IconTruck } from '../components/icons.jsx';
 
 export default function Cart() {
   const { cart, updateCartQty, removeFromCart, clearCart, toast } = useStore();
-  const { t } = useUI();
+  const { t, lang } = useUI();
   const navigate = useNavigate();
 
   const [calculation, setCalculation] = useState(null);
@@ -46,7 +47,6 @@ export default function Cart() {
     };
   }, [cart, appliedCoupon, toast]);
 
-  const currency = settings?.currency?.symbol || '$';
   const freeOver = Number(settings?.shipping?.freeOver || 0);
 
   const applyCoupon = async (event) => {
@@ -111,21 +111,21 @@ export default function Cart() {
               <article key={`${item.productId}|${item.model}|${item.color}`} className="cart-item">
                 <Link to={`/products/${item.productId}`} className="cart-item-media">
                   {item.image ? (
-                    <img src={item.image} alt={item.name} />
+                    <img src={item.image} alt={localizeName(item.name, lang)} />
                   ) : (
                     <div className="product-placeholder" />
                   )}
                 </Link>
                 <div className="cart-item-info">
                   <Link to={`/products/${item.productId}`} className="cart-item-name">
-                    {item.name}
+                    {localizeName(item.name, lang)}
                   </Link>
                   {(item.model || item.color) && (
                     <span className="cart-item-variant">
-                      {[item.model, item.color].filter(Boolean).join(' · ')}
+                      {[item.model, localizeColor(item.color, lang)].filter(Boolean).join(' · ')}
                     </span>
                   )}
-                  <span className="cart-item-price">{money(item.price, currency)}</span>
+                  <span className="cart-item-price">{money(item.price)}</span>
                   {short && (
                     <span className="stock-out small">
                       {t('cart.onlyLeft', { n: available })}
@@ -148,7 +148,7 @@ export default function Cart() {
                     <IconPlus size={15} />
                   </button>
                 </div>
-                <div className="cart-item-total">{money(item.price * item.qty, currency)}</div>
+                <div className="cart-item-total">{money(item.price * item.qty)}</div>
                 <button
                   className="icon-btn danger"
                   onClick={() => removeFromCart(item)}
@@ -186,23 +186,23 @@ export default function Cart() {
               {appliedCoupon.code}: −
               {appliedCoupon.type === 'percent'
                 ? `${appliedCoupon.value}%`
-                : money(appliedCoupon.value, currency)}
+                : money(appliedCoupon.value)}
             </p>
           )}
 
           <div className="summary-row">
             <span>{t('cart.subtotal')}</span>
-            <span>{money(calculation?.subtotal || 0, currency)}</span>
+            <span>{money(calculation?.subtotal || 0)}</span>
           </div>
           {(calculation?.discount || 0) > 0 && (
             <div className="summary-row discount">
               <span>{t('cart.discount')}</span>
-              <span>−{money(calculation.discount, currency)}</span>
+              <span>−{money(calculation.discount)}</span>
             </div>
           )}
           <div className="summary-row">
             <span>{t('cart.shipping')}</span>
-            <span>{calculation?.shippingFee > 0 ? money(calculation.shippingFee, currency) : t('common.free')}</span>
+            <span>{calculation?.shippingFee > 0 ? money(calculation.shippingFee) : t('common.free')}</span>
           </div>
 
           {freeOver > 0 &&
@@ -211,18 +211,18 @@ export default function Cart() {
               <p className="shipping-hint">
                 <IconTruck size={15} />{' '}
                 {t('cart.freeShippingHint', {
-                  amount: money(freeOver - (calculation?.subtotal || 0), currency),
+                  amount: money(freeOver - (calculation?.subtotal || 0)),
                 })}
               </p>
             )}
 
           <div className="summary-row total">
             <span>{t('cart.total')}</span>
-            <span>{money(calculation?.total || 0, currency)}</span>
+            <span>{money(calculation?.total || 0)}</span>
           </div>
 
           <button
-            className="btn btn-primary btn-block btn-lg"
+            className="btn btn-primary btn-block btn-lg btn-pulse"
             onClick={() => navigate('/checkout')}
             disabled={loading || (calculation?.items || []).some((l) => !l.inStock)}
           >

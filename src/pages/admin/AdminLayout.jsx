@@ -3,6 +3,7 @@ import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-route
 import { api } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
+import BrandLogo from '../../components/BrandLogo.jsx';
 import {
   IconChart,
   IconBox,
@@ -68,12 +69,7 @@ export default function AdminLayout() {
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <span className="brand-logo">
-            <IconBolt size={20} />
-          </span>
-          <span>
-            Mobi<strong>Boost</strong>
-          </span>
+          <BrandLogo />
         </div>
         <nav className="admin-nav">
           {links.map((link) => (

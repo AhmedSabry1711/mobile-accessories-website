@@ -3,28 +3,49 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import { api } from '../api/client.js';
+import { localizeCategory } from '../i18n/catalog.js';
+import BrandLogo from './BrandLogo.jsx';
 import {
   IconSearch,
   IconHeart,
   IconCart,
   IconMenu,
   IconClose,
-  IconBolt,
+  IconGlobe,
   IconMoon,
   IconSun,
 } from './icons.jsx';
 
 export default function Header() {
   const { cartCount, wishlist } = useStore();
-  const { t, theme, toggleTheme } = useUI();
+  const { t, theme, toggleTheme, lang, toggleLang } = useUI();
   const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Reload store settings on every navigation, and whenever the admin saves new
+  // ones, so categories added in the panel show up in the nav bar right away.
   useEffect(() => {
-    api.get('/api/settings.php').then(setSettings).catch(() => setSettings(null));
-  }, []);
+    let active = true;
+    const load = () =>
+      api
+        .get('/api/settings.php')
+        .then((data) => active && setSettings(data))
+        .catch(() => active && setSettings(null));
+    load();
+    const onUpdated = () => {
+      api
+        .get('/api/settings.php')
+        .then((data) => active && setSettings(data))
+        .catch(() => {});
+    };
+    window.addEventListener('mb:settings-updated', onUpdated);
+    return () => {
+      active = false;
+      window.removeEventListener('mb:settings-updated', onUpdated);
+    };
+  }, [location.pathname]);
 
   const categories = settings?.categories || [];
 
@@ -39,12 +60,7 @@ export default function Header() {
     <header className="header">
       <div className="container header-inner">
         <Link to="/" className="brand" onClick={() => setMenuOpen(false)}>
-          <span className="brand-logo">
-            <IconBolt size={22} />
-          </span>
-          <span className="brand-name">
-            Mobi<strong>Boost</strong>
-          </span>
+          <BrandLogo />
         </Link>
 
         <form className="search" onSubmit={submitSearch} role="search">
@@ -62,6 +78,16 @@ export default function Header() {
         </form>
 
         <div className="header-actions">
+          <button
+            className="icon-link lang-toggle"
+            onClick={toggleLang}
+            title={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+            aria-label={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+          >
+            <IconGlobe size={22} />
+            <span className="lang-code">{lang === 'ar' ? 'EN' : 'ع'}</span>
+          </button>
+
           <button
             className="icon-link theme-toggle"
             onClick={toggleTheme}
@@ -102,7 +128,7 @@ export default function Header() {
               to={`/shop?category=${encodeURIComponent(category)}`}
               onClick={() => setMenuOpen(false)}
             >
-              {category}
+              {localizeCategory(category, lang)}
             </Link>
           ))}
           <Link to="/shop?filter=sale" className="sale-link" onClick={() => setMenuOpen(false)}>

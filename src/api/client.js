@@ -46,5 +46,4 @@ export const api = {
   upload: (path, form) => request(path, { method: 'POST', form }),
 };
 
-export const money = (value, symbol = '$') =>
-  `${symbol}${Number(value ?? 0).toFixed(2)}`;
+export const money = (value) => Number(value ?? 0).toFixed(2);

@@ -3,22 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
+import { localizeColor, localizeName } from '../i18n/catalog.js';
 
 export default function Checkout() {
   const { cart, clearCart, toast } = useStore();
-  const { t } = useUI();
+  const { t, lang } = useUI();
   const navigate = useNavigate();
 
   const [calculation, setCalculation] = useState(null);
-  const [settings, setSettings] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [form, setForm] = useState({ name: '', phone: '', address: '' });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
-
-  useEffect(() => {
-    api.get('/api/settings.php').then(setSettings).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!cart.length) return;
@@ -39,8 +35,6 @@ export default function Checkout() {
       active = false;
     };
   }, [cart, couponCode, toast]);
-
-  const currency = settings?.currency?.symbol || '$';
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -110,6 +104,7 @@ export default function Checkout() {
         <form className="checkout-form" onSubmit={placeOrder}>
           <h2>{t('checkout.delivery')}</h2>
           <p className="muted">{t('checkout.muted')}</p>
+          <p className="delivery-time" dir="rtl">من 24 ساعة لـ 48 ساعة أقصى حاجة</p>
 
           <div className="form-group">
             <label htmlFor="co-name">{t('checkout.fields.name')}</label>
@@ -158,10 +153,10 @@ export default function Checkout() {
             />
           </div>
 
-          <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={placing || hasStockIssue}>
+          <button className="btn btn-primary btn-lg btn-block btn-pulse" type="submit" disabled={placing || hasStockIssue}>
             {placing
               ? t('checkout.placing')
-              : t('checkout.place', { total: money(calculation?.total || 0, currency) })}
+              : t('checkout.place', { total: money(calculation?.total || 0) })}
           </button>
           {hasStockIssue && <p className="field-error">{t('checkout.stockIssue')}</p>}
         </form>
@@ -172,37 +167,37 @@ export default function Checkout() {
             {(calculation?.items || []).map((line) => (
               <div key={`${line.productId}|${line.model}|${line.color}`} className="checkout-line">
                 <div className="checkout-line-media">
-                  {line.image ? <img src={line.image} alt={line.name} /> : <div className="product-placeholder" />}
+                  {line.image ? <img src={line.image} alt={localizeName(line.name, lang)} /> : <div className="product-placeholder" />}
                   <span className="checkout-qty">{line.qty}</span>
                 </div>
                 <div className="checkout-line-info">
-                  <span>{line.name}</span>
+                  <span>{localizeName(line.name, lang)}</span>
                   {(line.model || line.color) && (
-                    <small>{[line.model, line.color].filter(Boolean).join(' · ')}</small>
+                    <small>{[line.model, localizeColor(line.color, lang)].filter(Boolean).join(' · ')}</small>
                   )}
                 </div>
-                <span>{money(line.price * line.qty, currency)}</span>
+                <span>{money(line.price * line.qty)}</span>
               </div>
             ))}
           </div>
 
           <div className="summary-row">
             <span>{t('cart.subtotal')}</span>
-            <span>{money(calculation?.subtotal || 0, currency)}</span>
+            <span>{money(calculation?.subtotal || 0)}</span>
           </div>
           {(calculation?.discount || 0) > 0 && (
             <div className="summary-row discount">
               <span>{t('cart.discount')}</span>
-              <span>−{money(calculation.discount, currency)}</span>
+              <span>−{money(calculation.discount)}</span>
             </div>
           )}
           <div className="summary-row">
             <span>{t('cart.shipping')}</span>
-            <span>{calculation?.shippingFee > 0 ? money(calculation.shippingFee, currency) : t('common.free')}</span>
+            <span>{calculation?.shippingFee > 0 ? money(calculation.shippingFee) : t('common.free')}</span>
           </div>
           <div className="summary-row total">
             <span>{t('cart.total')}</span>
-            <span>{money(calculation?.total || 0, currency)}</span>
+            <span>{money(calculation?.total || 0)}</span>
           </div>
         </aside>
       </div>

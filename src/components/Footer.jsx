@@ -1,6 +1,27 @@
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext.jsx';
-import { IconBolt, IconTruck, IconShield, IconPhone, IconLock } from './icons.jsx';
+import BrandLogo from './BrandLogo.jsx';
+import {
+  IconTruck,
+  IconShield,
+  IconPhone,
+  IconLock,
+  IconTikTok,
+  IconInstagram,
+  IconWhatsApp,
+  IconFacebook,
+} from './icons.jsx';
+
+/**
+ * Social channels. A channel left empty renders a disabled "soon" badge
+ * instead of a link — fill it in and the icon becomes a working link.
+ */
+const SOCIALS = {
+  tiktok: 'https://www.tiktok.com/@mobi_boost_fayoum?_r=1&_t=ZS-9AFCVZcaomA',
+  instagram: 'https://instagram.com/mobi_boost_fayoum?exln=NXZvZG02Z3dnZjVy&utm_source=qr',
+  whatsapp: 'https://wa.me/201023538775',
+  facebook: 'https://www.facebook.com/p/MobiBoost-61595036596685/',
+};
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -11,12 +32,7 @@ export default function Footer() {
       <div className="container footer-grid">
         <div className="footer-brand">
           <div className="brand brand-footer">
-            <span className="brand-logo">
-              <IconBolt size={22} />
-            </span>
-            <span className="brand-name">
-              Mobi<strong>Boost</strong>
-            </span>
+            <BrandLogo />
           </div>
           <p>{t('footer.tagline')}</p>
           <ul className="footer-perks">
@@ -30,6 +46,62 @@ export default function Footer() {
               <IconPhone size={16} /> {t('footer.perks.cod')}
             </li>
           </ul>
+
+          <div className="footer-social">
+            <h4>{t('footer.contact')}</h4>
+            <div className="social-links">
+              <a
+                className="social-link social-tiktok"
+                href={SOCIALS.tiktok}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="TikTok"
+                title="TikTok"
+              >
+                <IconTikTok />
+              </a>
+              <a
+                className="social-link social-instagram"
+                href={SOCIALS.instagram}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                title="Instagram"
+              >
+                <IconInstagram />
+              </a>
+              <a
+                className="social-link social-whatsapp"
+                href={SOCIALS.whatsapp}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp"
+                title="WhatsApp"
+              >
+                <IconWhatsApp />
+              </a>
+              {SOCIALS.facebook ? (
+                <a
+                  className="social-link social-facebook"
+                  href={SOCIALS.facebook}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Facebook"
+                  title="Facebook"
+                >
+                  <IconFacebook />
+                </a>
+              ) : (
+                <span
+                  className="social-link social-facebook is-soon"
+                  aria-label="Facebook"
+                  title={`Facebook — ${t('footer.soon')}`}
+                >
+                  <IconFacebook />
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="footer-col">

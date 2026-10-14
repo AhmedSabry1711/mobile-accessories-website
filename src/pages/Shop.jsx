@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { localizeCategory } from '../i18n/catalog.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
@@ -10,7 +11,7 @@ const PAGE_SIZE = 24;
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useStore();
-  const { t } = useUI();
+  const { t, lang } = useUI();
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -54,13 +55,12 @@ export default function Shop() {
   }, [q, category, filter]);
 
   const categories = settings?.categories || [];
-  const currency = settings?.currency?.symbol || '$';
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const title = q
     ? t('shop.title.search', { q })
     : category
-      ? category
+      ? localizeCategory(category, lang)
       : filter === 'sale'
         ? t('shop.title.sale')
         : filter === 'new'
@@ -99,7 +99,7 @@ export default function Shop() {
             className={`chip ${category === item ? 'chip-active' : ''}`}
             onClick={() => setSearchParams({ category: item })}
           >
-            {item}
+            {localizeCategory(item, lang)}
           </button>
         ))}
       </div>
@@ -114,7 +114,7 @@ export default function Shop() {
         <>
           <div className="product-grid">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} currency={currency} />
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
 

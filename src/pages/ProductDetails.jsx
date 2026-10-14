@@ -4,6 +4,7 @@ import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import { localizeColor, localizeProduct } from '../i18n/catalog.js';
 import RatingStars from '../components/RatingStars.jsx';
 import { IconHeart, IconCart, IconMinus, IconPlus, IconStar } from '../components/icons.jsx';
 
@@ -11,14 +12,14 @@ export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart, wishlist, toggleWishlist, toast } = useStore();
-  const { t, locale } = useUI();
+  const { t, locale, lang } = useUI();
 
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState({ average: 0, count: 0, reviews: [] });
   const [related, setRelated] = useState([]);
-  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
+  const [colorImage, setColorImage] = useState(null);
   const [qty, setQty] = useState(1);
 
   const [selectedModel, setSelectedModel] = useState('');
@@ -31,28 +32,29 @@ export default function ProductDetails() {
     let active = true;
     setLoading(true);
     setActiveImage(0);
+    setColorImage(null);
     setQty(1);
 
     Promise.all([
       api.get(`/api/products.php?id=${id}`),
       api.get(`/api/reviews.php?product_id=${id}`),
       api.get(`/api/products.php?related_to=${id}`),
-      api.get('/api/settings.php'),
     ])
-      .then(([productRes, reviewsRes, relatedRes, settingsRes]) => {
+      .then(([productRes, reviewsRes, relatedRes]) => {
         if (!active) return;
         setProduct(productRes);
         setReviews(reviewsRes);
         setRelated(relatedRes || []);
-        setSettings(settingsRes);
 
         const variants = productRes?.variants || [];
         if (variants.length) {
           setSelectedModel(variants[0].model);
           setSelectedColor(variants[0].colors?.[0]?.name || '');
+          setColorImage(variants[0].colors?.[0]?.image || null);
         } else {
           setSelectedModel('');
           setSelectedColor('');
+          setColorImage(null);
         }
       })
       .catch((error) => {
@@ -77,13 +79,20 @@ export default function ProductDetails() {
   const activeColor = colorsForModel.find((c) => c.name === selectedColor) || null;
   const availableStock = hasVariants ? activeColor?.stock ?? 0 : product?.stockTotal ?? 0;
   const outOfStock = availableStock <= 0;
-  const currency = settings?.currency?.symbol || '$';
   const wished = product ? wishlist.includes(product.id) : false;
 
   const selectModel = (model) => {
     setSelectedModel(model);
     const variant = variants.find((v) => v.model === model);
-    setSelectedColor(variant?.colors?.[0]?.name || '');
+    const firstColor = variant?.colors?.[0] || null;
+    setSelectedColor(firstColor?.name || '');
+    setColorImage(firstColor?.image || null);
+    setQty(1);
+  };
+
+  const selectColor = (color) => {
+    setSelectedColor(color.name);
+    setColorImage(color.image || null);
     setQty(1);
   };
 
@@ -155,22 +164,24 @@ export default function ProductDetails() {
   }
 
   const images = product.images?.length ? product.images : [product.image].filter(Boolean);
+  const mainImage = colorImage || images[activeImage];
+  const display = localizeProduct(product, lang);
 
   return (
     <div className="container product-page">
       <nav className="breadcrumbs">
         <Link to="/">{t('product.breadcrumbs.home')}</Link>
         <span>/</span>
-        <Link to={`/shop?category=${encodeURIComponent(product.category)}`}>{product.category}</Link>
+        <Link to={`/shop?category=${encodeURIComponent(product.category)}`}>{display.category}</Link>
         <span>/</span>
-        <span>{product.name}</span>
+        <span>{display.name}</span>
       </nav>
 
       <div className="product-main">
         <div className="gallery">
           <div className="gallery-main">
-            {images[activeImage] ? (
-              <img src={images[activeImage]} alt={product.name} />
+            {mainImage ? (
+              <img src={mainImage} alt={display.name} />
             ) : (
               <div className="product-placeholder">{t('common.noImage')}</div>
             )}
@@ -183,19 +194,39 @@ export default function ProductDetails() {
               {images.map((image, index) => (
                 <button
                   key={index}
-                  className={`thumb ${index === activeImage ? 'thumb-active' : ''}`}
-                  onClick={() => setActiveImage(index)}
+                  className={`thumb ${!colorImage && index === activeImage ? 'thumb-active' : ''}`}
+                  onClick={() => {
+                    setActiveImage(index);
+                    setColorImage(null);
+                  }}
                 >
-                  <img src={image} alt={`${product.name} ${index + 1}`} />
+                  <img src={image} alt={`${display.name} ${index + 1}`} />
                 </button>
+              ))}
+            </div>
+          )}
+          {hasVariants && colorsForModel.length > 0 && (
+            <div className="gallery-swatches">
+              {colorsForModel.map((color) => (
+                <button
+                  key={color.name}
+                  type="button"
+                  className={`gallery-swatch ${
+                    selectedColor === color.name ? 'gallery-swatch-active' : ''
+                  } ${color.stock <= 0 ? 'gallery-swatch-out' : ''}`}
+                  style={{ background: color.hex }}
+                  title={`${localizeColor(color.name, lang)} — ${t('product.stockIn', { n: color.stock })}`}
+                  aria-label={localizeColor(color.name, lang)}
+                  onClick={() => selectColor(color)}
+                />
               ))}
             </div>
           )}
         </div>
 
         <div className="product-summary">
-          <span className="product-cat">{product.category}</span>
-          <h1>{product.name}</h1>
+          <span className="product-cat">{display.category}</span>
+          <h1>{display.name}</h1>
 
           <div className="product-rating">
             <RatingStars rating={reviews.average} size={17} showValue />
@@ -203,33 +234,36 @@ export default function ProductDetails() {
           </div>
 
           <div className="product-price">
-            <span className="price-lg">{money(product.price, currency)}</span>
+            <span className="price-lg">{money(product.price)}</span>
             {product.compareAtPrice > product.price && (
               <>
-                <span className="price-old-lg">{money(product.compareAtPrice, currency)}</span>
+                <span className="price-old-lg">{money(product.compareAtPrice)}</span>
                 <span className="save-pill">
-                  {t('product.save', { amount: money(product.compareAtPrice - product.price, currency) })}
+                  {t('product.save', { amount: money(product.compareAtPrice - product.price) })}
                 </span>
               </>
             )}
           </div>
 
-          <p className="product-desc">{product.description}</p>
+          <p className="product-desc">{display.description}</p>
 
           {hasVariants && (
             <div className="variant-block">
-              <label className="variant-label">{t('product.model')}</label>
-              <div className="variant-models">
+              <label className="variant-label" htmlFor="variant-model">
+                {t('product.model')}
+              </label>
+              <select
+                id="variant-model"
+                className="variant-select"
+                value={selectedModel}
+                onChange={(e) => selectModel(e.target.value)}
+              >
                 {variants.map((variant) => (
-                  <button
-                    key={variant.model}
-                    className={`variant-chip ${selectedModel === variant.model ? 'variant-active' : ''}`}
-                    onClick={() => selectModel(variant.model)}
-                  >
+                  <option key={variant.model} value={variant.model}>
                     {variant.model}
-                  </button>
+                  </option>
                 ))}
-              </div>
+              </select>
 
               <label className="variant-label">{t('product.color')}</label>
               <div className="variant-colors">
@@ -239,14 +273,11 @@ export default function ProductDetails() {
                     className={`color-chip ${selectedColor === color.name ? 'color-active' : ''} ${
                       color.stock <= 0 ? 'color-out' : ''
                     }`}
-                    onClick={() => {
-                      setSelectedColor(color.name);
-                      setQty(1);
-                    }}
-                    title={`${color.name} — ${t('product.stockIn', { n: color.stock })}`}
+                    onClick={() => selectColor(color)}
+                    title={`${localizeColor(color.name, lang)} — ${t('product.stockIn', { n: color.stock })}`}
                   >
                     <span className="swatch" style={{ background: color.hex }} />
-                    {color.name}
+                    {localizeColor(color.name, lang)}
                   </button>
                 ))}
               </div>
@@ -284,7 +315,7 @@ export default function ProductDetails() {
               </button>
             </div>
 
-            <button className="btn btn-primary btn-lg" onClick={addToCartHandler} disabled={outOfStock}>
+            <button className="btn btn-primary btn-lg btn-pulse" onClick={addToCartHandler} disabled={outOfStock}>
               <IconCart size={18} /> {t('common.addToCart')}
             </button>
 
@@ -298,7 +329,7 @@ export default function ProductDetails() {
           </div>
 
           <button
-            className="btn btn-dark btn-block"
+            className="btn btn-dark btn-block btn-pulse"
             onClick={() => {
               addToCartHandler();
               if (!outOfStock) navigate('/checkout');
@@ -309,6 +340,17 @@ export default function ProductDetails() {
           </button>
         </div>
       </div>
+
+      {related.length > 0 && (
+        <section className="related">
+          <h2>{t('product.relatedTitle')}</h2>
+          <div className="product-grid">
+            {related.map((item) => (
+              <ProductCard key={item.id} product={item} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="reviews" id="reviews">
         <h2>{t('product.reviewsTitle')}</h2>
@@ -389,16 +431,6 @@ export default function ProductDetails() {
         </form>
       </section>
 
-      {related.length > 0 && (
-        <section className="related">
-          <h2>{t('product.relatedTitle')}</h2>
-          <div className="product-grid">
-            {related.map((item) => (
-              <ProductCard key={item.id} product={item} currency={currency} />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

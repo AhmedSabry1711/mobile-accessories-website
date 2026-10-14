@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
-import { IconBolt } from '../../components/icons.jsx';
+import BrandLogo from '../../components/BrandLogo.jsx';
 
 export default function AdminLogin() {
   const { admin, login, toast } = useStore();
@@ -37,12 +37,7 @@ export default function AdminLogin() {
     <div className="admin-login">
       <form className="admin-login-card" onSubmit={submit}>
         <div className="brand brand-center">
-          <span className="brand-logo">
-            <IconBolt size={22} />
-          </span>
-          <span className="brand-name">
-            Mobi<strong>Boost</strong>
-          </span>
+          <BrandLogo />
         </div>
         <h1>{t('admin.login.title')}</h1>
         <p className="muted">{t('admin.login.subtitle')}</p>

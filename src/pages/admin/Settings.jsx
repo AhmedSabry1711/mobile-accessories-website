@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
+import { canonicalCategory, localizeCategory } from '../../i18n/catalog.js';
+import { IconClose, IconPlus } from '../../components/icons.jsx';
 
 export default function Settings() {
   const { toast } = useStore();
-  const { t } = useUI();
+  const { t, lang } = useUI();
   const [form, setForm] = useState({
     whatsapp: '',
     shippingEnabled: true,
@@ -13,8 +15,9 @@ export default function Settings() {
     freeOver: '0',
     currencySymbol: '$',
     currencyCode: 'USD',
-    categories: '',
+    categories: [],
   });
+  const [newCategory, setNewCategory] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,7 +35,7 @@ export default function Settings() {
           freeOver: String(settings.shipping?.freeOver ?? 0),
           currencySymbol: settings.currency?.symbol || '$',
           currencyCode: settings.currency?.code || 'USD',
-          categories: (settings.categories || []).join(', '),
+          categories: (settings.categories || []).map((c) => canonicalCategory(c)),
         });
       })
       .catch((error) => active && toast(error.message, 'error'))
@@ -43,6 +46,18 @@ export default function Settings() {
   }, [toast]);
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const addCategory = () => {
+    const value = canonicalCategory(newCategory);
+    if (!value) return;
+    setForm((prev) =>
+      prev.categories.includes(value) ? prev : { ...prev, categories: [...prev.categories, value] },
+    );
+    setNewCategory('');
+  };
+
+  const removeCategory = (value) =>
+    setForm((prev) => ({ ...prev, categories: prev.categories.filter((c) => c !== value) }));
 
   const save = async (event) => {
     event.preventDefault();
@@ -60,12 +75,10 @@ export default function Settings() {
           symbol: form.currencySymbol.trim() || '$',
           code: form.currencyCode.trim().toUpperCase() || 'USD',
         },
-        categories: form.categories
-          .split(',')
-          .map((c) => c.trim())
-          .filter(Boolean),
+        categories: form.categories,
       });
       toast(t('admin.settings.saved'), 'success');
+      window.dispatchEvent(new Event('mb:settings-updated'));
     } catch (error) {
       if (error.data?.errors) setErrors(error.data.errors);
       toast(error.message, 'error');
@@ -173,12 +186,40 @@ export default function Settings() {
           <h3>{t('admin.settings.categories')}</h3>
           <div className="form-group">
             <label htmlFor="st-cats">{t('admin.settings.storeCategories')}</label>
-            <input
-              id="st-cats"
-              value={form.categories}
-              onChange={(e) => update('categories', e.target.value)}
-              placeholder={t('admin.settings.categoriesPlaceholder')}
-            />
+            <div className="category-add">
+              <input
+                id="st-cats"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCategory();
+                  }
+                }}
+                placeholder={t('admin.settings.categoriesPlaceholder')}
+              />
+              <button className="btn btn-primary" type="button" onClick={addCategory}>
+                <IconPlus /> {t('admin.settings.categoriesAdd')}
+              </button>
+            </div>
+            {form.categories.length > 0 && (
+              <div className="category-chips">
+                {form.categories.map((category) => (
+                  <span key={category} className="category-chip">
+                    {localizeCategory(category, lang)}
+                    <button
+                      type="button"
+                      onClick={() => removeCategory(category)}
+                      aria-label={t('admin.settings.categoriesRemove')}
+                      title={t('admin.settings.categoriesRemove')}
+                    >
+                      <IconClose />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             {errors.categories && <span className="field-error">{errors.categories}</span>}
             <span className="muted small">{t('admin.settings.categoriesNote')}</span>
           </div>

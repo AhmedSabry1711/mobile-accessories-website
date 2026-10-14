@@ -6,17 +6,16 @@ import { StoreProvider } from './context/StoreContext.jsx';
 import { UIProvider } from './context/UIContext.jsx';
 import './styles.css';
 
-// Apply the theme attribute before first paint to avoid flashing.
-// (Language switching was removed — the storefront is English, LTR.)
+// Apply the theme + language attributes before first paint to avoid flashing.
 (function bootstrap() {
   try {
     const theme =
       localStorage.getItem('mb_theme') ||
       (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const lang = localStorage.getItem('mb_lang') || 'ar';
     document.documentElement.dataset.theme = theme;
-    document.documentElement.lang = 'en';
-    document.documentElement.dir = 'ltr';
-    localStorage.removeItem('mb_lang');
+    document.documentElement.lang = lang === 'ar' ? 'ar-EG' : 'en-US';
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   } catch {
     // storage unavailable — keep defaults
   }

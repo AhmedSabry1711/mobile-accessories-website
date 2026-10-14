@@ -5,7 +5,7 @@ import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import { IconPlus, IconTrash, IconImage } from '../../components/icons.jsx';
 
-const emptyColor = () => ({ name: '', hex: '#4f46e5', stock: 0 });
+const emptyColor = () => ({ name: '', hex: '#2563eb', stock: 0, image: '' });
 const emptyVariant = () => ({ model: '', colors: [emptyColor()] });
 
 const initialForm = {
@@ -145,6 +145,12 @@ export default function ProductForm() {
       )
     );
 
+  const uploadColorImage = async (vIndex, cIndex, event) => {
+    const url = await uploadFile(event.target.files?.[0]);
+    if (url) updateColor(vIndex, cIndex, 'image', url);
+    event.target.value = '';
+  };
+
   const removeColor = (vIndex, cIndex) =>
     setVariants((prev) =>
       prev.map((v, i) =>
@@ -174,6 +180,7 @@ export default function ProductForm() {
               name: c.name.trim(),
               hex: c.hex,
               stock: parseInt(c.stock, 10) || 0,
+              image: c.image || '',
             })),
           }))
         : [],
@@ -416,6 +423,35 @@ export default function ProductForm() {
                           value={color.stock}
                           onChange={(e) => updateColor(vIndex, cIndex, 'stock', e.target.value)}
                         />
+                        <label
+                          className={`color-img-upload ${color.image ? 'has-img' : ''}`}
+                          title={t('admin.productForm.colorImage')}
+                        >
+                          {color.image ? (
+                            <img src={color.image} alt="" />
+                          ) : (
+                            <IconImage size={15} />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(e) => uploadColorImage(vIndex, cIndex, e)}
+                          />
+                          {color.image && (
+                            <span
+                              className="color-img-remove"
+                              title={t('admin.productForm.removeColorImage')}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateColor(vIndex, cIndex, 'image', '');
+                              }}
+                            >
+                              ×
+                            </span>
+                          )}
+                        </label>
                         <button
                           type="button"
                           className="icon-btn danger"

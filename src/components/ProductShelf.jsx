@@ -3,7 +3,7 @@ import { useUI } from '../context/UIContext.jsx';
 import ProductCard from './ProductCard.jsx';
 
 /** A titled product shelf used on the home page. */
-export default function ProductShelf({ title, subtitle, viewAllTo, products = [], currency = '$' }) {
+export default function ProductShelf({ title, subtitle, viewAllTo, products = [] }) {
   const { t } = useUI();
   if (!products.length) return null;
 
@@ -23,7 +23,7 @@ export default function ProductShelf({ title, subtitle, viewAllTo, products = []
         </div>
         <div className="product-grid">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} currency={currency} />
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </div>
