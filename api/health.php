@@ -71,7 +71,11 @@ if ($CONFIG && isset($CONFIG['mysql'])) {
 
         $prefix = (string)$m['tablePrefix'];
         $tables = [];
-        foreach (['products', 'reviews', 'orders', 'coupons', 'ads', 'settings', 'users'] as $t) {
+        foreach ([
+            'products', 'product_images', 'product_variants', 'product_variant_colors',
+            'orders', 'order_items', 'reviews', 'coupons', 'ads',
+            'settings', 'categories', 'users',
+        ] as $t) {
             $name = $prefix . $t;
             try {
                 $pdo->query("SELECT 1 FROM `$name` LIMIT 1");

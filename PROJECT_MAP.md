@@ -47,6 +47,51 @@
   stock are **always re-validated server-side** before an order is created.
 - **Auth:** admin login returns an HMAC-signed token (`Bearer` header). Public storefront
   needs no accounts; checkout is Cash on Delivery (name / address / phone only).
+- **Localization:** the storefront is bilingual — **Egyptian Arabic is the default** (`ar`),
+  English (`en`) is one tap away via the header globe toggle. `UIContext` sets
+  `<html lang>` and `dir` (RTL/LTR) and exposes `t(key)`, `lang`, `toggleLang`; strings live
+  in `src/i18n/translations.js`. The choice is persisted in `localStorage('mb_lang')`.
+  Product names/descriptions, category labels, color names and ad titles come from the
+  database, so they get a separate English → Arabic map in `src/i18n/catalog.js`
+  (`localizeProduct` / `localizeCategory` / `localizeColor` / `localizeName` /
+  `localizeAdTitle` / `localizeVariant`). Category labels are stored as canonical English
+  keys and translated in both directions (`localizeCategory`); the admin category editor
+  passes a typed Arabic label through `canonicalCategory` before saving, so adding
+  "جرابات" from the panel still stores/links as `Phone Cases`. Only display text is
+  localized — URLs, cart lines and API filters keep the canonical English values, and
+  unmapped values fall back to the stored text.
+- **Store categories:** managed from **Admin → Settings → Categories** as an add/remove
+  chip editor. The saved list drives the header nav bar; `Header.jsx` reloads
+  `/api/settings.php` on every route change and on a `mb:settings-updated` window event
+  (dispatched after an admin save), so new categories appear without a manual refresh.
+- **Branding:** `src/components/BrandLogo.jsx` is the single lockup element used by the
+  header, footer, admin sidebar and admin login. It renders **two** drop-in-replaceable
+  files: `public/logo.png` (dark navy wordmark + electric-blue accent) for light surfaces
+  and `public/logo-light.png` (white wordmark + brighter blue accent) for dark ones.
+  `styles.css` decides which `<img>` is painted per surface and per theme, so no caller
+  ever picks a variant. Both assets are transparent PNGs cropped to the lockup; size them
+  with `.brand-logo { height }` (`img` fills it).
+- **Footer social:** the footer shows compact brand buttons (TikTok, Instagram,
+  WhatsApp, Facebook) whose URLs live in the `SOCIALS` map at the top of
+  `src/components/Footer.jsx`. Leaving `facebook` blank renders a dimmed
+  "قريبًا" placeholder instead of a link.
+- **One-tap add to cart:** every product card renders *Add To Cart*. Products with
+  options (phone cases) add their first in-stock variant (model + colour) and confirm
+  with a toast, instead of sending the shopper to the detail page.
+- **Hero ads:** promo cards are portrait `9 / 16` (`.ads-card-lg`), sized small so the
+  hero stays compact. `AdsCarousel.jsx` renders the ad list once per "copy", measures
+  the rendered set width and repeats it enough times to always cover the viewport
+  (minimum two copies), then sets `--ads-shift` to exactly one copy so the CSS
+  `translateX` loop restarts on an identical frame — the train never shows a gap and
+  the card that leaves one side re-enters on the other. Extra copies are marked
+  `aria-hidden`/`tabIndex={-1}`.
+- **Home page sections:** `Home.jsx` renders the ads carousel, a gradient hero
+  (headline + delivery pill + perks + CTAs), a *Shop by category* strip built from
+  `settings.categories` (each maps to an icon via `CATEGORY_ICONS`), then the deals /
+  new / all shelves. Headline and icon copy live in `home.*` translations.
+- **Delivery:** the store promises 24–48 hours (`home.delivery`, `home.perks.fast.text`).
+- **WhatsApp:** the floating widget and contact links read `settings.whatsapp`
+  (international format, e.g. `+201023538775`) from the admin Settings page.
 
 ## Directory Structure
 
@@ -54,8 +99,11 @@
 /                              (repository root)
 ├── api/                       PHP REST API  ->  upload to public_html/api/
 │   ├── config.php             DB settings (Mongo URI + MySQL creds), JWT secret, currency
-│   ├── _bootstrap.php         CORS, JSON helpers, DB helpers, token auth (MongoDB edition)
-│   ├── lib/store.php          Cart/coupon/stock logic (MongoDB edition)
+│   ├── _bootstrap.php         CORS, JSON helpers, MySQL storage layer, token auth
+│   ├── lib/store.php          Cart/coupon/stock logic
+│   ├── lib/mongo_compat.php   BSON value-type polyfills (ObjectId/UTCDateTime/Regex)
+│   ├── schema.sql             Normalized table definitions (copy of api-mysql/schema.sql)
+│   ├── migrate.php            CLI: convert an old document-schema DB to the tables
 │   ├── products.php           GET list/search/sale/new/related + GET single
 │   ├── reviews.php            GET reviews + average, POST new review
 │   ├── coupons.php            POST validate coupon against subtotal
@@ -64,6 +112,7 @@
 │   ├── settings.php           GET public settings (shipping, WhatsApp, categories, ads)
 │   ├── auth.php               POST admin login, GET current admin
 │   ├── upload.php             POST image/video upload (admin)
+│   ├── health.php             Deployment diagnostics (delete once verified)
 │   ├── seed.php               CLI demo-data seeder (admin, products, coupons, ads)
 │   └── admin/
 │       ├── dashboard.php      Revenue / profit / orders analytics
@@ -73,16 +122,20 @@
 │       ├── orders.php         Order list, detail, status update (restocks on cancel)
 │       ├── reviews.php        Review moderation (list / delete)
 │       └── settings.php       Shipping rules, WhatsApp number, categories
-├── api-mysql/                 MySQL/PDO drop-in edition (no ext-mongodb needed)
+├── api-mysql/                 MySQL/PDO edition sources (no ext-mongodb needed)
 │   ├── _bootstrap.php         PDO connection + storage helpers (same mongo_* API)
 │   ├── lib/store.php          Cart/coupon/stock logic (MySQL edition)
 │   ├── lib/mongo_compat.php   BSON value-type polyfills (ObjectId/UTCDateTime/Regex)
-│   ├── schema.sql             Creates the 7 JSON-document tables
-│   └── README.md              Activation steps + trade-offs
+│   ├── schema.sql             Normalized tables (products/orders/reviews/...)
+│   └── README.md              Activation + upgrade steps & trade-offs
 ├── src/                       React source
 │   ├── main.jsx, App.jsx, styles.css
 │   ├── api/client.js          fetch wrapper (auth header + error handling)
 │   ├── context/StoreContext.jsx   cart, wishlist, admin session, toasts
+│   ├── context/UIContext.jsx      theme + language (ar/en) + RTL/LTR direction
+│   ├── i18n/translations.js   Egyptian-Arabic (default) & English UI strings
+│   ├── i18n/catalog.js        English→Arabic map for DB content (products,
+│   │                          categories, colors, ads)
 │   ├── components/            Header, Footer, WhatsAppWidget, HeroTicker,
 │   │                          ProductCard, ProductShelf, RatingStars, icons
 │   └── pages/                 Home, Shop, ProductDetails, Cart, Checkout,
@@ -97,10 +150,13 @@
 
 ## Data Model (database `mobi_boost`)
 
-> MongoDB edition stores these as collections. The MySQL edition stores each collection as one
-> table (`mb_products`, `mb_reviews`, `mb_orders`, `mb_coupons`, `mb_ads`, `mb_settings`,
-> `mb_users`) with `id CHAR(24) PK · doc LONGTEXT (JSON) · created_at DATETIME`; the document
-> shape below is identical in both editions.
+> The MySQL edition (the one deployed) stores this in **normalized tables** — one column per
+> field, no JSON blobs: `mb_products` + `mb_product_images` / `mb_product_variants` /
+> `mb_product_variant_colors`, `mb_orders` + `mb_order_items`, `mb_reviews`, `mb_coupons`,
+> `mb_ads`, `mb_settings` (single row) + `mb_categories`, `mb_users`.
+> `api/_bootstrap.php` maps the `mongo_*` helpers onto these tables, so the endpoints are
+> unchanged; `api/migrate.php` upgrades an older document-schema database in place. The MongoDB
+> edition keeps the same logical document shape, listed below.
 
 - **products**: `name, slug?, category, description, price (selling), compareAtPrice, costPrice,
   images[], variants[{ model, colors[{ name, hex, stock }] }], stock (simple), status, createdAt`
@@ -174,7 +230,10 @@ then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is enough.
 
 - Order tracking page for customers (endpoint exists: `GET /api/orders.php?number=&phone=`).
 - Email/SMS order notifications (Hostinger can send via PHP `mail()` or SMTP).
-- Product slug URLs, multi-language, wishlist sharing.
+- ~~Product slug URLs, multi-language, wishlist sharing.~~
+  ✅ Multi-language partially done — bilingual **Egyptian Arabic (default) + English** with RTL/LTR
+  switching via the header toggle (`src/context/UIContext.jsx`, `src/i18n/translations.js`).
+  Slug URLs and wishlist sharing remain open.
 - ~~MySQL/PDO fallback driver if MongoDB extension cannot be enabled on the hosting plan.~~
   ✅ Done — see `api-mysql/` (drop-in `_bootstrap.php` + `lib/store.php` + `lib/mongo_compat.php`,
   `schema.sql`, verified end-to-end against MariaDB).

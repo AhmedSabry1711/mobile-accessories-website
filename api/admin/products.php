@@ -145,6 +145,10 @@ function validate_product(array $data): array {
                 $cname = trim((string)($color['name'] ?? ''));
                 $hex = trim((string)($color['hex'] ?? '#000000'));
                 $cstock = (int)($color['stock'] ?? 0);
+                $cimage = trim((string)($color['image'] ?? ''));
+                if ($cimage !== '' && !preg_match('#^(https?://|/)#i', $cimage)) {
+                    $cimage = '';
+                }
                 if ($cname === '') {
                     $errors["variants[$i].colors[$j]"] = 'Color name is required';
                     continue;
@@ -155,7 +159,7 @@ function validate_product(array $data): array {
                 if ($cstock < 0) {
                     $cstock = 0;
                 }
-                $cleanColors[] = ['name' => $cname, 'hex' => strtolower($hex), 'stock' => $cstock];
+                $cleanColors[] = ['name' => $cname, 'hex' => strtolower($hex), 'stock' => $cstock, 'image' => $cimage];
             }
             if (empty($cleanColors)) {
                 continue;

@@ -27,7 +27,10 @@ function seed_image(string $label, string $c1, string $c2): string {
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
-    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', trim($label))) . '.svg';
+    $slug = trim(strtolower(preg_replace('/[^a-z0-9]+/i', '-', trim($label))), '-');
+    // Include the colorway so multiple images for one product get distinct files
+    // (otherwise repeated labels overwrite each other and the gallery looks identical).
+    $slug .= '-' . substr(md5($c1 . $c2), 0, 6) . '.svg';
     $path = $dir . '/' . $slug;
 
     $svg = <<<SVG
@@ -81,10 +84,10 @@ if ($productCount > 0) {
 
 // ---------------------------------------------------------------- settings
 save_settings([
-    'whatsapp' => '+15550123456',
+    'whatsapp' => '+201023538775',
     'shipping' => ['enabled' => true, 'flatRate' => 4.99, 'freeOver' => 50.0],
     'currency' => ['symbol' => '$', 'code' => 'USD'],
-    'categories' => ['Phone Cases', 'Chargers', 'Screen Protectors', 'Earbuds', 'Holders', 'Cables'],
+    'categories' => ['Phone Cases', 'Chargers', 'Cables', 'Earbuds'],
 ]);
 
 // ---------------------------------------------------------------- admin
@@ -112,7 +115,7 @@ mongo_insert('coupons', [
 
 // ---------------------------------------------------------------- ads
 $adMedia1 = seed_image('Summer Sale — Up to 40% Off', '#4f46e5', '#7c3aed');
-$adMedia2 = seed_image('Free Shipping Over $50', '#059669', '#10b981');
+$adMedia2 = seed_image('Free Shipping Over 50', '#059669', '#10b981');
 $adMedia3 = seed_image('New iPhone 17 Collection', '#d97706', '#f59e0b');
 
 mongo_insert('ads', [
@@ -121,7 +124,7 @@ mongo_insert('ads', [
     'createdAt' => new MongoDB\BSON\UTCDateTime(),
 ]);
 mongo_insert('ads', [
-    'title' => 'Free Shipping Over $50', 'mediaUrl' => $adMedia2,
+    'title' => 'Free Shipping Over 50', 'mediaUrl' => $adMedia2,
     'type' => 'image', 'linkUrl' => '/shop', 'order' => 2, 'active' => true,
     'createdAt' => new MongoDB\BSON\UTCDateTime(),
 ]);
@@ -157,11 +160,20 @@ $imgStand = [seed_image('Adjustable Phone Stand', '#7f1d1d', '#ef4444')];
 $imgRing = [seed_image('Glow Ring Light', '#831843', '#ec4899')];
 $imgBattery = [seed_image('10000mAh Power Bank', '#3f3f46', '#71717a')];
 
+$armorVariants = variant_set($caseModels, ['Black' => '#111827', 'Midnight Blue' => '#1e3a8a', 'Forest' => '#14532d', 'Crimson' => '#991b1b']);
+// Give each colorway its own preview image so the gallery swatches swap the main image.
+foreach ($armorVariants as &$armorVariant) {
+    foreach ($armorVariant['colors'] as &$armorColor) {
+        $armorColor['image'] = seed_image('Armor ' . $armorColor['name'], $armorColor['hex'], '#0f172a');
+    }
+}
+unset($armorVariant, $armorColor);
+
 seed_product(
     'Armor Shockproof Bumper Case', 'Phone Cases',
     'Military-grade drop protection with reinforced corners, raised bezel for screen and camera safety, and a non-slip grip finish. Precision cutouts keep every port and button fully accessible.',
     19.99, 6.40, 34.99, $imgCase1,
-    variant_set($caseModels, ['Black' => '#111827', 'Midnight Blue' => '#1e3a8a', 'Forest' => '#14532d', 'Crimson' => '#991b1b'])
+    $armorVariants
 );
 
 seed_product(
