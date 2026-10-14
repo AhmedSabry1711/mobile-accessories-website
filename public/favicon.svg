@@ -9,8 +9,14 @@
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </radialGradient>
+    <clipPath id="mb-mark"><rect x="0" y="15.36" width="64" height="33.28"/></clipPath>
   </defs>
   <rect x="0" y="0" width="64" height="64" rx="14.4" fill="url(#mb-tile)"/>
   <rect x="0" y="0" width="64" height="64" rx="14.4" fill="url(#mb-sheen)"/>
-  <polygon points="35.9,9.28 21.32,34.73 30.47,34.73 27.76,54.72 42.68,28.36 33.53,28.36" fill="#FFFFFF"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="6.93" stroke-linecap="butt" clip-path="url(#mb-mark)">
+    <line x1="16.52" y1="13.51" x2="16.52" y2="50.49"/>
+    <line x1="47.48" y1="13.51" x2="47.48" y2="50.49"/>
+    <line x1="15.66" y1="13.51" x2="32.86" y2="50.49"/>
+    <line x1="48.34" y1="13.51" x2="31.14" y2="50.49"/>
+  </g>
 </svg>

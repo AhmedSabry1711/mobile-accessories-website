@@ -3,7 +3,7 @@
  * Mobi Boost — favicon / app-icon factory.
  *
  * Renders the brand icon (rounded tile with a navy -> electric-blue diagonal
- * gradient + soft sheen, carrying the white lightning bolt) and writes the whole
+ * gradient + soft sheen, carrying a white "M" monogram) and writes the whole
  * browser/OS icon stack into public/ so `npm run build` copies it to dist/.
  *
  * No GD/Imagick needed: shapes are rasterised by hand with supersampling, which
@@ -26,23 +26,39 @@ const NAVY  = [0x00, 0x0B, 0x29];
 const BLUE  = [0x00, 0x3B, 0xEC];
 const WHITE = [0xFF, 0xFF, 0xFF];
 
-/** Classic 6-point lightning bolt, in its own 0..1 box. */
-const BOLT = [
-    [0.615, 0.000],
-    [0.185, 0.560],
-    [0.455, 0.560],
-    [0.375, 1.000],
-    [0.815, 0.420],
-    [0.545, 0.420],
+/**
+ * The mark is a bold geometric "M" monogram: two vertical stems plus the two
+ * diagonals that meet at the middle of the baseline. It is modelled in its own
+ * 0..1 box as the union of four thick segments, then clipped vertically so the
+ * cap and the baseline come out perfectly flat.
+ *   M_X0..M_X1 / M_Y0..M_Y1 = the glyph's tight bounding box in that space
+ */
+const M_X0  = 0.08228;
+const M_X1  = 0.91772;
+const M_Y0  = 0.14;
+const M_Y1  = 0.86;
+const M_HW  = 0.075;   // half the stroke weight
+const M_SEGS = [
+    [0.16500, 0.10, 0.16500, 0.90],   // left stem
+    [0.83500, 0.10, 0.83500, 0.90],   // right stem
+    [0.14639, 0.10, 0.51861, 0.90],   // left diagonal  -> passes through (0.50, 0.86)
+    [0.85361, 0.10, 0.48139, 0.90],   // right diagonal -> passes through (0.50, 0.86)
 ];
 
-function point_in_bolt(float $x, float $y): bool {
-    $n = count(BOLT); $hit = false;
-    for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
-        [$xi, $yi] = BOLT[$i]; [$xj, $yj] = BOLT[$j];
-        if (($yi > $y) !== ($yj > $y) && $x < ($xj - $xi) * ($y - $yi) / ($yj - $yi) + $xi) $hit = !$hit;
+function dist_to_segment(float $px, float $py, float $x1, float $y1, float $x2, float $y2): float {
+    $dx = $x2 - $x1; $dy = $y2 - $y1;
+    $len2 = $dx * $dx + $dy * $dy;
+    $t = $len2 > 0 ? (($px - $x1) * $dx + ($py - $y1) * $dy) / $len2 : 0.0;
+    $t = max(0.0, min(1.0, $t));
+    return hypot($px - ($x1 + $t * $dx), $py - ($y1 + $t * $dy));
+}
+
+function point_in_m(float $x, float $y): bool {
+    if ($y < M_Y0 || $y > M_Y1) return false;
+    foreach (M_SEGS as [$x1, $y1, $x2, $y2]) {
+        if (dist_to_segment($x, $y, $x1, $y1, $x2, $y2) <= M_HW) return true;
     }
-    return $hit;
+    return false;
 }
 
 function in_rounded(float $x, float $y, float $x0, float $y0, float $x1, float $y1, float $r): bool {
@@ -75,16 +91,21 @@ function sheen(float $x, float $y): float {
     return 0.22 * exp(-$d2 / 0.28);
 }
 
-function bolt_box(string $variant): array {
-    return $variant === 'frame' ? [0.24, 0.155, 0.76, 0.845] : [0.235, 0.145, 0.765, 0.855];
+/** Where the M sits inside the tile (same aspect ratio, centred). */
+function mark_box(string $variant): array {
+    $h = $variant === 'frame' ? 0.46 : 0.52;
+    $w = $h * ((M_X1 - M_X0) / (M_Y1 - M_Y0));
+    $y0 = (1 - $h) / 2;
+    $x0 = (1 - $w) / 2;
+    return [$x0, $y0, $x0 + $w, $y0 + $h];
 }
 
-function bolt_hit(float $x, float $y, string $variant): bool {
-    [$px0, $py0, $px1, $py1] = bolt_box($variant);
-    $bx = ($x - $px0) / ($px1 - $px0);
-    $by = ($y - $py0) / ($py1 - $py0);
-    if ($bx < 0 || $bx > 1 || $by < 0 || $by > 1) return false;
-    return point_in_bolt($bx, $by);
+function mark_hit(float $x, float $y, string $variant): bool {
+    [$tx0, $ty0, $tx1, $ty1] = mark_box($variant);
+    if ($x < $tx0 || $x > $tx1 || $y < $ty0 || $y > $ty1) return false;
+    $mx = M_X0 + ($x - $tx0) / ($tx1 - $tx0) * (M_X1 - M_X0);
+    $my = M_Y0 + ($y - $ty0) / ($ty1 - $ty0) * (M_Y1 - M_Y0);
+    return point_in_m($mx, $my);
 }
 
 /**
@@ -111,16 +132,16 @@ function render_icon(string $variant, int $size, bool $bleed): array {
                         $c = tile_colour($x, $y);
                         $s = sheen($x, $y);
                         if ($s > 0.001) $c = lerp_colour($c, [255, 255, 255], $s);
-                        if (bolt_hit($x, $y, $variant)) $c = [255, 255, 255];
+                        if (mark_hit($x, $y, $variant)) $c = [255, 255, 255];
                     } elseif ($variant === 'frame') {
                         $c = NAVY;
                         if (in_rounded($x, $y, 0.105, 0.105, 0.895, 0.895, 0.135)) {
-                            $c = bolt_hit($x, $y, $variant) ? BLUE : WHITE;
+                            $c = mark_hit($x, $y, $variant) ? BLUE : WHITE;
                         }
                     } elseif ($variant === 'blue') {
-                        $c = bolt_hit($x, $y, $variant) ? [255, 255, 255] : BLUE;
+                        $c = mark_hit($x, $y, $variant) ? [255, 255, 255] : BLUE;
                     } else { // navy
-                        $c = bolt_hit($x, $y, $variant) ? BLUE : NAVY;
+                        $c = mark_hit($x, $y, $variant) ? BLUE : NAVY;
                     }
 
                     $ar += $c[0]; $ag += $c[1]; $ab += $c[2]; $aa += 1.0;
@@ -138,46 +159,67 @@ function render_icon(string $variant, int $size, bool $bleed): array {
     return [$size, $size, $buf];
 }
 
-/** Vector source for a variant (64x64 viewBox). */
+/**
+ * Vector source for a variant (64x64 viewBox).
+ *
+ * The M is drawn exactly like the rasteriser builds it: four stroked lines with
+ * butt caps, clipped to the cap/baseline band, so both stay in sync.
+ */
 function svg_icon(string $variant): string {
-    [$px0, $py0, $px1, $py1] = bolt_box($variant);
-    $pts = [];
-    foreach (BOLT as [$x, $y]) {
-        $pts[] = round(($px0 + $x * ($px1 - $px0)) * 64, 2) . ',' . round(($py0 + $y * ($py1 - $py0)) * 64, 2);
-    }
-    $bolt = implode(' ', $pts);
+    [$tx0, $ty0, $tx1, $ty1] = mark_box($variant);
+    $mapX = fn(float $mx): float => ($tx0 + ($mx - M_X0) / (M_X1 - M_X0) * ($tx1 - $tx0)) * 64;
+    $mapY = fn(float $my): float => ($ty0 + ($my - M_Y0) / (M_Y1 - M_Y0) * ($ty1 - $ty0)) * 64;
+    $strokeW = ($tx1 - $tx0) * 64 / (M_X1 - M_X0) * 2 * M_HW;
 
-    if ($variant === 'premium') {
-        return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mobi Boost">
-  <defs>
-    <linearGradient id="mb-tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#000B29"/>
-      <stop offset="0.5" stop-color="#00166B"/>
-      <stop offset="1" stop-color="#003BEC"/>
-    </linearGradient>
-    <radialGradient id="mb-sheen" cx="0.5" cy="-0.22" r="0.72">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect x="0" y="0" width="64" height="64" rx="14.4" fill="url(#mb-tile)"/>
-  <rect x="0" y="0" width="64" height="64" rx="14.4" fill="url(#mb-sheen)"/>
-  <polygon points="$bolt" fill="#FFFFFF"/>
-</svg>
-SVG;
+    $segments = '';
+    foreach (M_SEGS as [$x1, $y1, $x2, $y2]) {
+        $segments .= sprintf(
+            "    <line x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\"/>\n",
+            $mapX($x1), $mapY($y1), $mapX($x2), $mapY($y2)
+        );
+    }
+    $clipTop = sprintf('%.2f', $mapY(M_Y0));
+    $clipH   = sprintf('%.2f', $mapY(M_Y1) - $mapY(M_Y0));
+
+    $tileFill = 'url(#mb-tile)';
+    $inner = '';
+    $mark = '#FFFFFF';
+    if ($variant === 'frame') {
+        $tileFill = '#000B29';
+        $inner = '  <rect x="6.7" y="6.7" width="50.6" height="50.6" rx="8.6" fill="#FFFFFF"/>' . "\n";
+        $mark = '#003BEC';
+    } elseif ($variant === 'blue') {
+        $tileFill = '#003BEC';
+    } elseif ($variant === 'navy') {
+        $tileFill = '#000B29';
+        $mark = '#003BEC';
     }
 
-    $tile = $variant === 'blue' ? '#003BEC' : '#000B29';
-    $boltColour = $variant === 'blue' ? '#FFFFFF' : '#003BEC';
-    $inner = $variant === 'frame'
-        ? '  <rect x="6.7" y="6.7" width="50.6" height="50.6" rx="8.6" fill="#FFFFFF"/>' . "\n"
+    $gradients = $variant === 'premium'
+        ? "    <linearGradient id=\"mb-tile\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n"
+            . "      <stop offset=\"0\" stop-color=\"#000B29\"/>\n"
+            . "      <stop offset=\"0.5\" stop-color=\"#00166B\"/>\n"
+            . "      <stop offset=\"1\" stop-color=\"#003BEC\"/>\n"
+            . "    </linearGradient>\n"
+            . "    <radialGradient id=\"mb-sheen\" cx=\"0.5\" cy=\"-0.22\" r=\"0.72\">\n"
+            . "      <stop offset=\"0\" stop-color=\"#FFFFFF\" stop-opacity=\"0.22\"/>\n"
+            . "      <stop offset=\"1\" stop-color=\"#FFFFFF\" stop-opacity=\"0\"/>\n"
+            . "    </radialGradient>\n"
         : '';
-    return "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" role=\"img\" aria-label=\"Mobi Boost\">\n"
-        . "  <rect x=\"0\" y=\"0\" width=\"64\" height=\"64\" rx=\"14.4\" fill=\"$tile\"/>\n"
-        . $inner
-        . "  <polygon points=\"$bolt\" fill=\"$boltColour\"/>\n"
-        . "</svg>\n";
+
+    $svg  = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" role=\"img\" aria-label=\"Mobi Boost\">\n";
+    $svg .= "  <defs>\n" . $gradients
+        . "    <clipPath id=\"mb-mark\"><rect x=\"0\" y=\"$clipTop\" width=\"64\" height=\"$clipH\"/></clipPath>\n"
+        . "  </defs>\n";
+    $svg .= "  <rect x=\"0\" y=\"0\" width=\"64\" height=\"64\" rx=\"14.4\" fill=\"$tileFill\"/>\n";
+    if ($variant === 'premium') {
+        $svg .= "  <rect x=\"0\" y=\"0\" width=\"64\" height=\"64\" rx=\"14.4\" fill=\"url(#mb-sheen)\"/>\n";
+    }
+    $svg .= $inner;
+    $svg .= sprintf("  <g fill=\"none\" stroke=\"%s\" stroke-width=\"%.2f\" stroke-linecap=\"butt\" clip-path=\"url(#mb-mark)\">\n", $mark, $strokeW);
+    $svg .= $segments;
+    $svg .= "  </g>\n</svg>\n";
+    return $svg;
 }
 
 function png_bytes(int $w, int $h, array $rgba): string {

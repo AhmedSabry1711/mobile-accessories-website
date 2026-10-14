@@ -72,8 +72,8 @@
   ever picks a variant. Both assets are transparent PNGs cropped to the lockup; size them
   with `.brand-logo { height }` (`img` fills it).
 - **Browser tab icon (favicon):** a rounded tile with a navy→electric-blue diagonal
-  gradient and a soft sheen, carrying the brand's white lightning bolt — the same bolt
-  used in the lockup. `public/favicon.svg` is the vector source of truth and
+  gradient and a soft sheen, carrying a bold white **"M"** monogram (the brand's initial)
+  so the tab is recognisable without the wordmark. `public/favicon.svg` is the vector source of truth and
   `public/favicon.ico` (16/32/48) the classic fallback that also overrides any hosting
   default at the domain root; `public/apple-touch-icon.png` (180) and
   `public/icon-192.png` / `icon-512.png` + `public/site.webmanifest` cover iOS/Android
@@ -246,7 +246,7 @@ then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is enough.
 
 - **`tools/make-icons.php`** — regenerates the whole favicon/app-icon stack in `public/`
   (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`).
-  It needs no GD/Imagick: the tile gradient, sheen and bolt are rasterised by hand with
+  It needs no GD/Imagick: the tile gradient, sheen and "M" mark are rasterised by hand with
   supersampling, and the `.ico` is packed manually.
 
   ```bash
@@ -255,10 +255,13 @@ then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is enough.
   php tools/make-icons.php %TEMP% premium preview   # + preview-variants.png sheet
   ```
 
-  Variants are `premium` (default — gradient tile + white bolt), `frame` (navy frame, white
-  field, blue bolt), `blue` (electric-blue tile + white bolt) and `navy`. Editing the icon
+  Variants are `premium` (default — gradient tile + white "M"), `frame` (navy frame, white
+  field, blue "M"), `blue` (electric-blue tile + white "M") and `navy`. Editing the icon
   means editing this script, not the binaries — running it reproduces the shipped files
-  byte-for-byte. After running it, `npm run build` (or `deploy.ps1`) copies them to `dist/`.
+  byte-for-byte. The mark itself is a bold geometric "M" defined as the union of four thick
+  segments (two stems + two diagonals that meet at the baseline) clipped flat top and bottom,
+  and is drawn identically in the SVG (four `<line>`s under a `<clipPath>`) and the raster.
+  After running it, `npm run build` (or `deploy.ps1`) copies them to `dist/`.
 
 ## Pending / Backlog (post-MVP)
 
