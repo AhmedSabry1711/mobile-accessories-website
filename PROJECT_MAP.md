@@ -71,6 +71,14 @@
   `styles.css` decides which `<img>` is painted per surface and per theme, so no caller
   ever picks a variant. Both assets are transparent PNGs cropped to the lockup; size them
   with `.brand-logo { height }` (`img` fills it).
+- **Browser tab icon (favicon):** a rounded tile with a navy→electric-blue diagonal
+  gradient and a soft sheen, carrying the brand's white lightning bolt — the same bolt
+  used in the lockup. `public/favicon.svg` is the vector source of truth and
+  `public/favicon.ico` (16/32/48) the classic fallback that also overrides any hosting
+  default at the domain root; `public/apple-touch-icon.png` (180) and
+  `public/icon-192.png` / `icon-512.png` + `public/site.webmanifest` cover iOS/Android
+  install. `index.html` declares them (with a `?v=` cache-buster) and a `theme-color`.
+  Regenerate the whole set with `php tools/make-icons.php` — see **Build tooling** below.
 - **Footer social:** the footer shows compact brand buttons (TikTok, Instagram,
   WhatsApp, Facebook) whose URLs live in the `SOCIALS` map at the top of
   `src/components/Footer.jsx`. Leaving `facebook` blank renders a dimmed
@@ -141,7 +149,15 @@
 │   └── pages/                 Home, Shop, ProductDetails, Cart, Checkout,
 │       └── admin/             OrderSuccess + AdminLogin/Layout/Dashboard/Products/
 │                              ProductForm/Coupons/Ads/Orders/Settings/Reviews
-├── public/                    static assets copied to dist/
+├── public/                    static assets copied verbatim to dist/
+│   ├── logo.png               dark navy wordmark lockup (light surfaces)
+│   ├── logo-light.png         white wordmark lockup (dark surfaces)
+│   ├── favicon.svg            vector tab icon (source of truth)
+│   ├── favicon.ico            16/32/48 fallback + root override
+│   ├── apple-touch-icon.png, icon-192.png, icon-512.png
+│   └── site.webmanifest       PWA install metadata (name/theme/icons)
+├── tools/                     build-time helpers (not shipped)
+│   └── make-icons.php         regenerates the favicon/app-icon stack
 ├── dist/                      npm run build output -> upload contents to public_html/
 ├── .htaccess                  SPA fallback for public_html/
 ├── package.json, vite.config.js, index.html
@@ -225,6 +241,24 @@ php api/seed.php               # seed demo data
 To run locally on **MySQL** instead of MongoDB: import `api-mysql/schema.sql`, copy the three
 drop-in files over `api/` (see the api-mysql README), set the `mysql` block in `api/config.php`,
 then `php api/seed.php`. XAMPP's MariaDB + `pdo_mysql` is enough.
+
+## Build Tooling
+
+- **`tools/make-icons.php`** — regenerates the whole favicon/app-icon stack in `public/`
+  (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`).
+  It needs no GD/Imagick: the tile gradient, sheen and bolt are rasterised by hand with
+  supersampling, and the `.ico` is packed manually.
+
+  ```bash
+  php tools/make-icons.php                  # premium variant -> public/
+  php tools/make-icons.php public navy      # alternative tile
+  php tools/make-icons.php %TEMP% premium preview   # + preview-variants.png sheet
+  ```
+
+  Variants are `premium` (default — gradient tile + white bolt), `frame` (navy frame, white
+  field, blue bolt), `blue` (electric-blue tile + white bolt) and `navy`. Editing the icon
+  means editing this script, not the binaries — running it reproduces the shipped files
+  byte-for-byte. After running it, `npm run build` (or `deploy.ps1`) copies them to `dist/`.
 
 ## Pending / Backlog (post-MVP)
 

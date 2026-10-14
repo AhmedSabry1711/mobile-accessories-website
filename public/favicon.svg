@@ -1,10 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mobi Boost">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4f46e5"/>
-      <stop offset="1" stop-color="#7c3aed"/>
+    <linearGradient id="mb-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#000B29"/>
+      <stop offset="0.5" stop-color="#00166B"/>
+      <stop offset="1" stop-color="#003BEC"/>
     </linearGradient>
+    <radialGradient id="mb-sheen" cx="0.5" cy="-0.22" r="0.72">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#g)"/>
-  <path d="M36 8 L20 36 h10 L26 56 L44 26 h-11 z" fill="#fff"/>
+  <rect x="0" y="0" width="64" height="64" rx="14.4" fill="url(#mb-tile)"/>
+  <rect x="0" y="0" width="64" height="64" rx="14.4" fill="url(#mb-sheen)"/>
+  <polygon points="35.9,9.28 21.32,34.73 30.47,34.73 27.76,54.72 42.68,28.36 33.53,28.36" fill="#FFFFFF"/>
 </svg>

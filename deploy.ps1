@@ -1,6 +1,8 @@
 # Mobi Boost — build & package for Hostinger deployment.
 # Produces mobiboost-deploy.zip containing exactly what goes into public_html/:
 #   index.html + assets/   (React production build)
+#   favicon.svg/.ico, apple-touch-icon.png, icon-192/512.png, site.webmanifest
+│                          (brand tab/PWA icons — they overwrite any hosting default)
 #   api/                   (PHP REST API)
 #   .htaccess              (SPA fallback routing)
 #   uploads/               (empty, writable media folder)
