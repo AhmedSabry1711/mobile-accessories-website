@@ -114,7 +114,8 @@ The repository is fully self-contained (React + PHP, MySQL edition already in
 3. Upload the **contents of `dist/`** into `public_html/` (this puts `index.html` and `assets/` at the web root).
 4. Upload the **`api/` folder** into `public_html/api/` — the MySQL edition is already baked in,
    so there is nothing to copy over it.
-5. Upload the repo's **`.htaccess`** into `public_html/` (enables React client-side routing).
+5. Upload the repo's **`.htaccess`** into `public_html/` (enables React client-side routing and
+   forwards the `Authorization` header to PHP for the admin API).
 6. Create a writable **`public_html/uploads/`** folder for product images and ad media.
 7. Edit **`public_html/api/config.php`**:
    - `jwtSecret` → a long random secret

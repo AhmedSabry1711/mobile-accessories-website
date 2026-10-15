@@ -34,9 +34,9 @@ hPanel → أنشئ داتابيز  →  api/config.php  →  استورد api/s
 2. من القائمة الجانبية: **Databases** → **MySQL Databases**.
 3. تحت **Create a new MySQL database** اكتب:
    - **Database name:** `mobi`
-     → Hostinger بيضيف بادئة الحساب لوحده، فالاسم النهائي بيبقى **`u126187_mobi`**
+     → Hostinger بيضيف بادئة الحساب لوحده، فالاسم النهائي بيبقى **`u118872087_mobi`**
    - **Username:** `user`
-     → بيبقى **`u126187_user`**
+     → بيبقى **`u118872087_user`**
    - **Password:** اضغط **Generate** → وبعدين **انسخ الباسورد في مكان آمن دلوقتي** (مش هيتعرض تاني بنفس الشكل)
 4. اضغط **Create**.
 5. هتظهرلك بيانات الاتصال — دي اللي هنستخدمها في الخطوة الجاية:
@@ -45,8 +45,8 @@ hPanel → أنشئ داتابيز  →  api/config.php  →  استورد api/s
    |---|---|
    | **Host** | `localhost` — أو `srv1566.hstgr.io` لو `localhost` مش نافع |
    | **Port** | `3306` |
-   | **Database** | `u126187_mobi` |
-   | **Username** | `u126187_user` |
+   | **Database** | `u118872087_mobi` |
+   | **Username** | `u118872087_user` |
    | **Password** | الباسورد اللي نسخته |
 
 > 💡 **أستخدم أي Host؟**
@@ -66,8 +66,8 @@ hPanel → أنشئ داتابيز  →  api/config.php  →  استورد api/s
 'mysql' => [
     'host'        => 'localhost',
     'port'        => 3306,
-    'database'    => 'u126187_mobi',
-    'username'    => 'u126187_user',
+    'database'    => 'u118872087_mobi',
+    'username'    => 'u118872087_user',
     'password'    => 'اكتب_هنا_الباسورد_اللي_نسخته',
     'tablePrefix' => 'mb_',
 ],
@@ -95,7 +95,7 @@ hPanel → أنشئ داتابيز  →  api/config.php  →  استورد api/s
 ### الطريقة (أ) — phpMyAdmin ✅ الأحسن لو مش عندك تيرمنال
 
 1. hPanel → **Databases** → **phpMyAdmin** (أو زر *Enter phpMyAdmin* جنب الداتابيز).
-2. من القائمة الشمال اختار الداتابيز **`u126187_mobi`**.
+2. من القائمة الشمال اختار الداتابيز **`u118872087_mobi`**.
 3. تبويب **Import**.
 4. **Choose File** → اختار ملف **`api/schema.sql`**
    (موجود في نسخة المشروع عندك على الكمبيوتر: `mobile-accessories-website\api\schema.sql`).
@@ -111,7 +111,7 @@ mb_ads        mb_settings         mb_categories         mb_users
 ### الطريقة (ب) — Terminal / SSH (لو خطتك بتسمح)
 
 ```bash
-php /home/u126187/domains/mobiboost.store/public_html/api/migrate.php
+php /home/u118872087/domains/mobiboost.store/public_html/api/migrate.php
 ```
 
 - على داتابيز **فاضية** → بيعمل نفس الجداول الـ12.
@@ -153,7 +153,7 @@ https://mobiboost.store/api/health.php
 | الرسالة | السبب | الحل |
 |---|---|---|
 | `Access denied for user` | يوزر أو باسورد غلط | راجع خطوة 2 وانسخ الباسورد تاني من hPanel |
-| `Unknown database` | اسم الداتابيز غلط | لازم يكون بالبادئة: `u126187_mobi` |
+| `Unknown database` | اسم الداتابيز غلط | لازم يكون بالبادئة: `u118872087_mobi` |
 | `No such host` / `getaddrinfo failed` | الـHost غلط | جرّب اسم السيرفر الطويل بدل `localhost` |
 | `could not find driver` | `pdo_mysql` مقفولة | hPanel → Advanced → PHP Configuration → فعّلها |
 
@@ -168,7 +168,7 @@ https://mobiboost.store/api/health.php
 ### (أ) بيانات تجريبية كاملة (منتجات + كوبونات + بانرات + أدمن) — عبر Terminal
 
 ```bash
-php /home/u126187/domains/mobiboost.store/public_html/api/seed.php
+php /home/u118872087/domains/mobiboost.store/public_html/api/seed.php
 ```
 
 هيعمل 10 منتجات + كوبونين + 3 بانرات + أدمن **`admin` / `admin123`**.
@@ -181,7 +181,7 @@ php /home/u126187/domains/mobiboost.store/public_html/api/seed.php
 2. في خانة الأمر (Command) حط:
 
    ```bash
-   php /home/u126187/domains/mobiboost.store/public_html/api/seed.php >> /home/u126187/seed.log 2>&1
+   php /home/u118872087/domains/mobiboost.store/public_html/api/seed.php >> /home/u118872087/seed.log 2>&1
    ```
 
 3. اختار أي جدول زمني (مثلًا كل ساعة) واحفظ، واستنى دورة واحدة.
@@ -190,16 +190,31 @@ php /home/u126187/domains/mobiboost.store/public_html/api/seed.php
 
 ### (ج) أرجل واحد أدمن بس (بدون منتجات تجريبية) — أسرع طريقة بدون Terminal
 
-في **phpMyAdmin** → الداتابيز `u126187_mobi` → تبويب **SQL** → الصق الكود ده واضغط **Go**:
+في **phpMyAdmin** → الداتابيز `u118872087_mobi` → تبويب **SQL** → الصق الكود ده واضغط **Go**:
 
 ```sql
-INSERT INTO `mb_users` (`username`, `password_hash`, `created_at`)
-VALUES ('admin', '$2y$10$WCCUL8aq3TzMrdDo0P7ciu1gux.djggZDxL7L20sQohuvgSAKrnSq', UTC_TIMESTAMP());
+INSERT INTO `mb_users` (`id`, `username`, `password_hash`, `created_at`)
+VALUES ('6423bbc1a2b2f6f18677a46f', 'admin', '$2y$10$WCCUL8aq3TzMrdDo0P7ciu1gux.djggZDxL7L20sQohuvgSAKrnSq', UTC_TIMESTAMP());
+```
+
+> ⚠️ **عمود `id` مش اختياري ولازم يكون 24 حرف hex** (`0-9` و `a-f` بس).
+> الجدول معرّف كـ `id CHAR(24) NOT NULL PRIMARY KEY` من غير قيمة افتراضية.
+> توكن الأدمن بيستخدم `id` ده جواه، والـAPI بترفض أي `id` مش 24-hex بتاع **401 Unauthorized** —
+> والنتيجة اللي بتظهرلك في اللوحة: **"انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى"** بعد ما تسجّل دخولك بنجاح.
+> لو الـid غلط، اعمل التصحيح ده:
+
+```sql
+-- شوف عندك إيه
+SELECT `id`, `username`, CHAR_LENGTH(`id`) AS id_len FROM `mb_users`;
+
+-- لو id_len مش 24، صحّحه:
+UPDATE `mb_users` SET `id` = '6423bbc1a2b2f6f18677a46f' WHERE `username` = 'admin';
 ```
 
 - بيعمل مستخدم **`admin`** بباسورد **`admin123`** (هاش bcrypt جاهز وصالح).
 - بعدها ادخل `/admin` **وغيّر الباسورد فورًا**، وضيف منتجاتك من لوحة التحكم.
 - كل الإعدادات (واتساب / الشحن / العملة / الأقسام) بتتعمل من صفحة **Settings** جوه `/admin` — مش محتاجة أي SQL.
+- للتشخيص السريع لو لسه فيه مشكلة مصادقة: [`tools/diag-admin-auth.php`](./tools/diag-admin-auth.php) (انسخه لـ `public_html/api/diag.php` وافتحه بـ `?go=1`، وبعدها امسحه).
 
 ### (د) من كمبيوترك مباشرة (لو SSH مش متاح)
 
@@ -255,6 +270,8 @@ php api/seed.php
 | `db.connected: false` | بيانات الاتصال غلط في `config.php` | راجع خطوة 2، وجرّب الـHostين (`localhost` والاسم الطويل) |
 | كل الجداول `MISSING` | `schema.sql` ماتستوردش | كرّر خطوة 3 (تأكد إنك مستورد على نفس الداتابيز) |
 | `/admin` بيرجّع 500 | مفيش مستخدم أدمن أو `mb_users` فاضل | نفّذ خطوة 5 (ج) |
+| **"انتهت الجلسة" بعد تسجيل دخول ناجح** | عمود `mb_users.id` مش 24 حرف hex (أو فاضي) → التوكن بيطلع بـ`sub` غير صالح → كل طلب محمي بيرجّع 401 | خطوة 5 (ج) → `UPDATE mb_users SET id='6423bbc1a2b2f6f18677a46f' WHERE username='admin'` |
+| لسه 401 بعد تصحيح الـid | السيرفر بيشيل هيدر `Authorization` قبل PHP | تأكد إن ملف `.htaccess` فيه سطر تمرير الهيدر (موجود في نسخة الريبو) + `tools/diag-admin-auth.php` |
 | رفع الصور بيفشل | `uploads` مش موجود أو صلاحيته غلط | خطوة 7 (صلاحية 755) |
 | أخطاء CORS في المتصفح | `corsOrigin` لسه `*` أو دومين غلط | خطوة 2 → خليها `https://mobiboost.store` |
 
@@ -263,5 +280,5 @@ php api/seed.php
 ## نقل بياناتك من اللوكال (XAMPP) للإنتاج
 
 1. **عندك محليًا** في phpMyAdmin: اختار الداتابيز → تبويب **Export** → **Go** → هيطلع ملف `.sql`.
-2. **على Hostinger** في phpMyAdmin: اختار `u126187_mobi` → تبويب **Import** → ارفع الملف.
+2. **على Hostinger** في phpMyAdmin: اختار `u118872087_mobi` → تبويب **Import** → ارفع الملف.
 3. لو نفس الأسماء موجودة، امسح الجداول الأول من الإنتاج أو خلّي ملف التصدير من غير `DROP TABLE`/`CREATE TABLE` (اختار Data only).

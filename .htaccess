@@ -4,6 +4,12 @@
 RewriteEngine On
 RewriteBase /
 
+# Hand the Authorization header through to PHP. On CGI/FastCGI setups — including
+# some Hostinger plans — Apache drops it, and then every Bearer-authenticated admin
+# call answers 401 ("Session expired") even though the token itself is valid.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Serve existing files/directories directly (static assets, /api, /uploads)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

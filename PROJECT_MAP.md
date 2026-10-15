@@ -160,7 +160,8 @@
 │   ├── apple-touch-icon.png, icon-192.png, icon-512.png
 │   └── site.webmanifest       PWA install metadata (name/theme/icons)
 ├── tools/                     build-time helpers (not shipped)
-│   └── make-icons.php         regenerates the favicon/app-icon stack
+│   ├── make-icons.php         regenerates the favicon/app-icon stack
+│   └── diag-admin-auth.php    one-shot admin-auth diagnostic (copy to api/ when needed)
 ├── dist/                      npm run build output -> upload contents to public_html/
 ├── .htaccess                  SPA fallback for public_html/
 ├── package.json, vite.config.js, index.html
@@ -224,7 +225,8 @@
    in phpMyAdmin (or run `php api/migrate.php` over SSH) to create the 12 `mb_*` tables.
 3. Upload **contents of `dist/`** into `public_html/` (includes `index.html`, assets).
 4. Upload the **`api/` folder** into `public_html/api/` — the MySQL edition is already in place.
-5. Upload **`.htaccess`** (repo root) into `public_html/` (SPA routing).
+5. Upload **`.htaccess`** (repo root) into `public_html/` (SPA routing; it also forwards the
+   `Authorization` header to PHP, which the admin Bearer tokens need).
 6. Create `public_html/uploads/` (writable) for product images/ad media.
 7. Edit `public_html/api/config.php`: set `jwtSecret`, `corsOrigin`, and the `mysql` block
    (host, port, database, username, password, `tablePrefix`).
