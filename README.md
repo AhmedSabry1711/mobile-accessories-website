@@ -101,6 +101,10 @@ The repository is fully self-contained (React + PHP, MySQL edition already in
    For **UI-only changes** use `.\deploy.ps1 -FrontendOnly` instead: it produces
    **`mobiboost-frontend.zip`** with just `index.html` + `assets/`, so it cannot
    overwrite your live `api/config.php`.
+   For **API-only changes** use `.\deploy.ps1 -ApiOnly`: it produces
+   **`mobiboost-api.zip`** holding the `api/` folder **without `config.php`**, so
+   extracting it in `public_html/` refreshes `public_html/api/` and leaves your
+   live credentials untouched. This is the safe way to ship PHP changes.
 3. Upload the **zip contents** to `public_html/` in hPanel File Manager and
    extract it there. If the host creates a wrapper folder, move its contents up
    into `public_html/` and delete the wrapper. **Never delete `public_html/api/`**

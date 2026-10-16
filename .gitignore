@@ -5,6 +5,7 @@ node_modules/
 dist/
 mobiboost-deploy.zip
 mobiboost-frontend.zip
+mobiboost-api.zip
 
 # Runtime user media (ads / product uploads).
 # Local seed art under uploads/seed/ is regenerated on the server by: php api/seed.php
