@@ -4,6 +4,7 @@ import { api } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import BrandLogo from '../../components/BrandLogo.jsx';
+import { closeGate } from '../../components/AdminGate.jsx';
 import {
   IconChart,
   IconBox,
@@ -88,7 +89,8 @@ export default function AdminLayout() {
           className="admin-logout"
           onClick={() => {
             logout();
-            navigate('/admin', { replace: true });
+            closeGate();
+            navigate('/', { replace: true });
           }}
         >
           <IconLogout size={18} /> {t('admin.layout.signOut')}

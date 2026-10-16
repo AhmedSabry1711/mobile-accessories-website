@@ -23,17 +23,45 @@ Full-stack e-commerce web app for **mobile accessories**, built for **Hostinger 
   and **related products**
 - **Cart** with dynamic totals, server-side shipping rules, and coupon codes
 - **Cash-on-Delivery checkout** — name, address, phone only
+- **Support pages** — Help & Support (`/help`), Shipping & Delivery (`/shipping`),
+  Returns Policy (`/returns`, 14-day returns) and Contact Us (`/contact`, WhatsApp/call
+  `01023538775`), each linked from the footer
+- **Scroll to top** on every navigation, so footer links land at the top of the new page
 - Comprehensive footer + **persistent floating WhatsApp widget** on every page
 
 ### Admin panel (`/admin`)
+- **Owner gate:** the footer's 🔒 link asks for the **owner password** (no username) before
+  the login page is reachable — see [Owner gate](#owner-gate-admin-access) below
 - **Dashboard:** revenue, **net profit** (cost vs. selling price), order stats, low stock, top products
 - **Products:** create/edit with cost price, selling price, images, discounts, and per-model/color variants
 - **Orders:** view details and update status (cancelling restocks inventory automatically)
 - **Coupons:** percent or fixed discounts with minimum order and expiry
-- **Ads/Banners:** upload GIFs / short videos for the hero ticker
+- **Ads/Banners:** upload GIFs / short videos for the hero ticker, or paste any
+  `/uploads/...` or `http(s)://` media URL
 - **Shipping control:** flat rate + free-shipping threshold
 - **Reviews:** moderate and delete customer reviews
 - **Settings:** WhatsApp number, currency, categories
+- **Sign out** returns to the storefront home page
+
+### Owner gate (admin access)
+
+`/admin` is not reachable by typing the URL. The flow is:
+
+1. Click the small 🔒 **لوحة التحكم / Admin** button in the footer.
+2. Enter the **owner password** — currently `Pa$$w0rd` — with *no username*.
+3. That unlocks the admin login page, where the normal admin credentials are entered.
+4. Leaving the admin area (sign out, or the *Back to home* button) re-locks it, so the
+   next visit asks for the owner password again.
+
+Implementation: [`src/components/AdminGate.jsx`](./src/components/AdminGate.jsx) (the modal +
+`isGateOpen`/`openGate`/`closeGate` helpers, a `sessionStorage` flag that `src/App.jsx`
+clears whenever the route leaves `/admin`), [`src/pages/admin/AdminLogin.jsx`](./src/pages/admin/AdminLogin.jsx)
+(redirects home when the gate is closed, and shows a *Back to home* button).
+
+> ⚠️ The owner gate is **convenience, not security**: the value ships inside the JS bundle
+> and the repository is public. Real authentication is still the admin login
+> (`username` + `password` verified server-side). Change the default `admin123` password.
+
 
 ---
 
@@ -153,6 +181,29 @@ public_html/
 
 ---
 
+## Storefront routes
+
+| Route | Page |
+|-------|------|
+| `/` | Home — hero ads ticker, deals, new arrivals, all products |
+| `/shop?q=&category=&filter=sale\|new` | Catalog / search results |
+| `/products/:id` | Product details |
+| `/cart`, `/checkout`, `/order-success/:orderNumber` | Purchase flow |
+| `/help`, `/shipping`, `/returns`, `/contact` | Support pages (`src/pages/InfoPage.jsx`) |
+| `/admin`, `/admin/panel/*` | Owner gate + admin panel (renders **no** storefront chrome) |
+
+`src/components/ScrollToTop.jsx` resets the scroll position on every navigation (skipping
+in-page `#hash` anchors), so footer links land at the top of the destination page.
+
+> 📷 **Product images and ad media live in `public_html/uploads/`, not in the repository.**
+> The API recreates the folder whenever it is missing (`api/_bootstrap.php`), but it cannot
+> restore the files themselves — after any deployment that replaces the web root, re-upload
+> the images (or restore the folder from a backup). Product cards and the product gallery
+> fall back to a "no image" placeholder when a file is missing (`onError` handling), so a
+> missing image never leaves a broken-image icon.
+
+---
+
 ## API overview
 
 | Method | Endpoint | Description |
@@ -170,6 +221,9 @@ public_html/
 
 ## Security notes
 
+- The **owner gate** on the footer lock is convenience only (the password ships in the JS
+  bundle). It just keeps the admin login page out of casual reach — the real check is the
+  admin login, which the API verifies. Use a strong admin password.
 - Prices, stock, coupons, and shipping are **always recalculated server-side** before an order is saved.
 - Admin tokens are HMAC-SHA256 signed; change `jwtSecret` before going live.
 - Product stock is validated and decremented atomically per line item.

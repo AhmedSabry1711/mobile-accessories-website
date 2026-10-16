@@ -105,7 +105,10 @@ function validate_ad_input(array $data): array {
     if (mb_strlen($title) < 2 || mb_strlen($title) > 80) {
         $errors['title'] = 'Title must be 2-80 characters';
     }
-    if (!preg_match('~^/(uploads/|https?://)~', $mediaUrl)) {
+    // Accept a relative /uploads/... path OR a full http(s):// URL. (The old
+    // pattern required the string to start with "/", so pasted https:// links
+    // were always rejected — see "Upload a media file or provide ..." error.)
+    if (!preg_match('~^(/uploads/|/seed/|https?://)~', $mediaUrl)) {
         $errors['mediaUrl'] = 'Upload a media file or provide an /uploads/ or http(s) URL';
     }
     if ($type === null) {

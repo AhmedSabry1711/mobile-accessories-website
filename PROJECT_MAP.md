@@ -44,8 +44,9 @@
 - **Frontend:** React 18 + Vite + React Router. All pages are static after `npm run build`.
   `src/App.jsx` declares two shells: a **storefront layout** (Header + page + Footer +
   WhatsApp button) for `/`, `/shop`, `/products/:id`, `/cart`, `/checkout`,
-  `/order-success/:id`, and a **separate admin shell** for `/admin` and `/admin/panel/*`
-  that renders *no* storefront chrome — so the panel cannot be left except via Sign out.
+  `/order-success/:id`, the four support pages `/help`, `/shipping`, `/returns`, `/contact`,
+  and a **separate admin shell** for `/admin` and `/admin/panel/*` that renders *no*
+  storefront chrome.
 - **Backend:** Stateless PHP scripts (`api/*.php`). Each file requires `api/_bootstrap.php`
   (CORS, JSON headers, DB connection, helpers, admin auth). No Composer needed.
   Storage is **MySQL/PDO** — clean, normalized tables (`api/schema.sql`), no JSON blobs.
@@ -274,6 +275,27 @@ enough. Returning to MongoDB is still possible by pointing `mongoUri` at Atlas a
   segments (two stems + two diagonals that meet at the baseline) clipped flat top and bottom,
   and is drawn identically in the SVG (four `<line>`s under a `<clipPath>`) and the raster.
   After running it, `npm run build` (or `deploy.ps1`) copies them to `dist/`.
+
+## Storefront navigation, support pages & owner gate
+
+| Piece | File | Behaviour |
+|-------|------|-----------|
+| Support pages | `src/pages/InfoPage.jsx` | `/help`, `/shipping`, `/returns`, `/contact` share one layout; copy lives under `info.*` in `src/i18n/translations.js`; each page links to WhatsApp and `tel:+201023538775` (`01023538775`) |
+| Scroll to top | `src/components/ScrollToTop.jsx` | Resets the scroll position on `pathname`/`search` changes, skipping `#hash` anchors; the global `scroll-behavior: smooth` is bypassed so the jump is instant |
+| Owner gate | `src/components/AdminGate.jsx` | Footer lock → owner password (`Pa$$w0rd`, **no username**) → admin login page. A `sessionStorage` flag (`mb_admin_gate`) is cleared by `src/App.jsx` whenever the route leaves `/admin`, so the password is asked again on the next visit |
+| Admin login | `src/pages/admin/AdminLogin.jsx` | Redirects to `/` when the gate is closed, hides the default-credentials hint, adds a *Back to home* button |
+| Sign out | `src/pages/admin/AdminLayout.jsx` | Signs out, closes the gate and navigates to `/` (storefront home) |
+| Missing images | `src/components/ProductCard.jsx`, `src/pages/ProductDetails.jsx` | `onError` falls back to the "no image" placeholder instead of a broken-image icon |
+| Uploads folder | `api/_bootstrap.php` | Recreates `uploads/` on any API hit when it is missing (existing files are never touched) |
+| Ads media URL | `api/admin/ads.php` | Validation only accepted strings starting with `/`, so pasted `https://` media URLs were **always** rejected ("Upload a media file or provide an /uploads/ or http(s) URL"). It now accepts `^/uploads/`, `^/seed/` and `^https?://` |
+
+Footer content changes: the *free shipping over 50 EGP* perk was removed, the returns perk is
+now **14 days**, the help column links to the new pages, and the store column deep-links to
+`/shop`, `/shop?filter=sale`, `/shop?filter=new`, `/shop?category=Phone%20Cases` and
+`/shop?category=Chargers`.
+
+> The owner gate is **not** a security boundary — the password ships inside the JS bundle.
+> The API still verifies the admin username/password on every request.
 
 ## Pending / Backlog (post-MVP)
 

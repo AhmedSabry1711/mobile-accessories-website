@@ -3577,3 +3577,119 @@ code {
   left: 22px;
   align-items: flex-start;
 }
+
+/* ---------------------------------------------------------------- info pages */
+.info-page {
+  padding: 30px 20px 60px;
+  max-width: 880px;
+}
+
+.info-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 30px;
+  box-shadow: var(--shadow);
+}
+
+.info-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+
+.info-card h1 {
+  margin: 0 0 10px;
+}
+
+.info-intro {
+  font-size: 1.02rem;
+  color: var(--body);
+  margin-bottom: 14px;
+}
+
+.info-text {
+  color: var(--muted);
+  line-height: 1.9;
+  margin: 0 0 10px;
+}
+
+.info-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.info-back {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.info-back:hover {
+  color: var(--primary);
+}
+
+/* ------------------------------------------------------- owner gate (footer) */
+.admin-gate {
+  max-width: 400px;
+}
+
+.admin-gate .modal-head {
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.admin-gate .modal-head h2 {
+  font-size: 1.15rem;
+}
+
+.gate-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  margin: 0 auto 18px;
+}
+
+.admin-gate .form-group {
+  margin-bottom: 12px;
+}
+
+.admin-gate input {
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+/* ---------------------------------------------------------------- footer tweaks */
+.footer-col h4 a {
+  color: inherit;
+}
+
+.footer-col h4 a:hover {
+  color: var(--primary);
+}
+
+button.footer-admin {
+  background: none;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- admin login */
+.admin-login-back {
+  margin-top: 12px;
+}

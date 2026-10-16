@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import BrandLogo from '../../components/BrandLogo.jsx';
+import { isGateOpen, closeGate } from '../../components/AdminGate.jsx';
 
 export default function AdminLogin() {
   const { admin, login, toast } = useStore();
@@ -16,6 +17,10 @@ export default function AdminLogin() {
   useEffect(() => {
     if (admin) navigate('/admin/panel', { replace: true });
   }, [admin, navigate]);
+
+  // This page is only reachable after the owner gate (the footer lock) is
+  // opened — otherwise anyone could land here by typing the URL.
+  if (!isGateOpen()) return <Navigate to="/" replace />;
 
   const submit = async (event) => {
     event.preventDefault();
@@ -69,7 +74,10 @@ export default function AdminLogin() {
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
           {loading ? t('admin.login.signingIn') : t('admin.login.signIn')}
         </button>
-        <p className="admin-hint muted">{t('admin.login.hint')}</p>
+
+        <Link to="/" className="btn btn-outline btn-block admin-login-back" onClick={closeGate}>
+          {t('admin.login.back')}
+        </Link>
       </form>
     </div>
   );

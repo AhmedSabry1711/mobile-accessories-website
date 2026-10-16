@@ -33,6 +33,13 @@ $CONFIG = require __DIR__ . '/config.php';
 // Value-type polyfills — no-op when the real mongodb extension is loaded.
 require __DIR__ . '/lib/mongo_compat.php';
 
+// Uploads folder self-heal: re-create it on any API hit if it is missing (a
+// fresh deployment or a manual cleanup can remove it). Existing files are never
+// touched — only the (empty) directory is recreated so new uploads keep working.
+if (!empty($CONFIG['uploadDir']) && !is_dir($CONFIG['uploadDir'])) {
+    @mkdir($CONFIG['uploadDir'], 0755, true);
+}
+
 // ---------------------------------------------------------------- HTTP setup
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: ' . $CONFIG['corsOrigin']);

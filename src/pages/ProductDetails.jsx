@@ -21,6 +21,7 @@ export default function ProductDetails() {
   const [activeImage, setActiveImage] = useState(0);
   const [colorImage, setColorImage] = useState(null);
   const [qty, setQty] = useState(1);
+  const [brokenImage, setBrokenImage] = useState('');
 
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -34,6 +35,7 @@ export default function ProductDetails() {
     setActiveImage(0);
     setColorImage(null);
     setQty(1);
+    setBrokenImage('');
 
     Promise.all([
       api.get(`/api/products.php?id=${id}`),
@@ -180,8 +182,8 @@ export default function ProductDetails() {
       <div className="product-main">
         <div className="gallery">
           <div className="gallery-main">
-            {mainImage ? (
-              <img src={mainImage} alt={display.name} />
+            {mainImage && mainImage !== brokenImage ? (
+              <img src={mainImage} alt={display.name} onError={() => setBrokenImage(mainImage)} />
             ) : (
               <div className="product-placeholder">{t('common.noImage')}</div>
             )}
@@ -200,7 +202,7 @@ export default function ProductDetails() {
                     setColorImage(null);
                   }}
                 >
-                  <img src={image} alt={`${display.name} ${index + 1}`} />
+                  <img src={image} alt={`${display.name} ${index + 1}`} onError={() => setBrokenImage(image)} />
                 </button>
               ))}
             </div>

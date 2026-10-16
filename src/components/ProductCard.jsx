@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
@@ -8,6 +9,7 @@ import { IconHeart, IconCart } from './icons.jsx';
 export default function ProductCard({ product }) {
   const { addToCart, wishlist, toggleWishlist, toast } = useStore();
   const { t, lang } = useUI();
+  const [imageFailed, setImageFailed] = useState(false);
   const wished = wishlist.includes(product.id);
   const outOfStock = product.stockTotal <= 0;
   const display = localizeProduct(product, lang);
@@ -54,8 +56,8 @@ export default function ProductCard({ product }) {
     <article className="product-card">
       <div className="product-media">
         <Link to={`/products/${product.id}`} className="product-media-link">
-          {product.image ? (
-            <img src={product.image} alt={display.name} loading="lazy" />
+          {product.image && !imageFailed ? (
+            <img src={product.image} alt={display.name} loading="lazy" onError={() => setImageFailed(true)} />
           ) : (
             <div className="product-placeholder">{t('common.noImage')}</div>
           )}

@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext.jsx';
 import BrandLogo from './BrandLogo.jsx';
+import AdminGate from './AdminGate.jsx';
 import {
-  IconTruck,
   IconShield,
   IconPhone,
   IconLock,
@@ -26,6 +27,7 @@ const SOCIALS = {
 export default function Footer() {
   const year = new Date().getFullYear();
   const { t } = useUI();
+  const [gateOpen, setGateOpen] = useState(false);
 
   return (
     <footer className="footer">
@@ -36,9 +38,6 @@ export default function Footer() {
           </div>
           <p>{t('footer.tagline')}</p>
           <ul className="footer-perks">
-            <li>
-              <IconTruck size={16} /> {t('footer.perks.freeShipping')}
-            </li>
             <li>
               <IconShield size={16} /> {t('footer.perks.returns')}
             </li>
@@ -114,12 +113,14 @@ export default function Footer() {
         </div>
 
         <div className="footer-col">
-          <h4>{t('footer.help')}</h4>
+          <h4>
+            <Link to="/help">{t('footer.help')}</Link>
+          </h4>
           <Link to="/cart">{t('footer.links.yourCart')}</Link>
           <Link to="/checkout">{t('footer.links.checkout')}</Link>
-          <Link to="/shop">{t('footer.links.shipping')}</Link>
-          <Link to="/shop">{t('footer.links.returns')}</Link>
-          <Link to="/shop">{t('footer.links.contact')}</Link>
+          <Link to="/shipping">{t('footer.links.shipping')}</Link>
+          <Link to="/returns">{t('footer.links.returns')}</Link>
+          <Link to="/contact">{t('footer.links.contact')}</Link>
         </div>
 
         <div className="footer-col footer-newsletter">
@@ -150,13 +151,21 @@ export default function Footer() {
           <span>{t('footer.rights', { year })}</span>
           <span className="footer-bottom-right">
             <span className="footer-meta">{t('footer.meta')}</span>
-            <Link to="/admin" className="footer-admin" title={t('footer.admin')}>
+            <button
+              type="button"
+              className="footer-admin"
+              title={t('footer.admin')}
+              aria-label={t('footer.admin')}
+              onClick={() => setGateOpen(true)}
+            >
               <IconLock size={12} />
               {t('footer.admin')}
-            </Link>
+            </button>
           </span>
         </div>
       </div>
+
+      <AdminGate open={gateOpen} onClose={() => setGateOpen(false)} />
     </footer>
   );
 }
