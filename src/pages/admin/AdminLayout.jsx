@@ -84,7 +84,13 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <button className="admin-logout" onClick={logout}>
+        <button
+          className="admin-logout"
+          onClick={() => {
+            logout();
+            navigate('/admin', { replace: true });
+          }}
+        >
           <IconLogout size={18} /> {t('admin.layout.signOut')}
         </button>
       </aside>

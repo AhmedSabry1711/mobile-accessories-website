@@ -1,20 +1,38 @@
 # Mobi Boost — build & package for Hostinger deployment.
-# Produces mobiboost-deploy.zip containing exactly what goes into public_html/:
-#   index.html + assets/   (React production build)
-#   favicon.svg/.ico, apple-touch-icon.png, icon-192/512.png, site.webmanifest
-│                          (brand tab/PWA icons — they overwrite any hosting default)
-#   api/                   (PHP REST API)
-#   .htaccess              (SPA fallback routing)
-#   uploads/               (empty, writable media folder)
 #
-# Usage: right-click -> "Run with PowerShell", or:
+# Two modes:
+#
+#   Full deploy (default)      -> mobiboost-deploy.zip
+#       index.html + assets/ + brand icons   (React production build)
+#       api/                                 (PHP REST API)
+#       .htaccess                            (SPA fallback + Authorization passthrough)
+#       uploads/                             (empty, writable media folder)
+#
+#   Frontend only (-FrontendOnly) -> mobiboost-frontend.zip
+#       index.html + assets/ + brand icons only. Use this for UI changes: it
+#       CANNOT touch the live api/ folder or your api/config.php credentials.
+#
+# Usage:
 #    powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy.ps1
-# Then upload the ZIP CONTENTS to public_html/ in hPanel File Manager and
-# follow the README (configure api/config.php, run the seeder, change password).
+#    powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy.ps1 -FrontendOnly
+#
+# Uploading (hPanel File Manager):
+#    1. Upload the ZIP into public_html/.
+#    2. Extract it THERE. The entries have no wrapper folder, so extracting in
+#       public_html/ drops index.html + assets/ exactly where they belong.
+#    3. If your host created a wrapper folder (e.g. the zip name), open it, select
+#       everything inside, MOVE it into public_html/ and delete the wrapper.
+#   4. NEVER delete or replace public_html/api/ to "clean up" — it holds your
+#       live config.php (database password + jwtSecret).
+param(
+    [switch]$FrontendOnly
+)
+
 $ErrorActionPreference = 'Stop'
-$root   = $PSScriptRoot
-$stage  = Join-Path $env:TEMP "mb-deploy-stage"
-$zip    = Join-Path $root "mobiboost-deploy.zip"
+$root    = $PSScriptRoot
+$stage   = Join-Path $env:TEMP "mb-deploy-stage"
+$zipName = if ($FrontendOnly) { "mobiboost-frontend.zip" } else { "mobiboost-deploy.zip" }
+$zip     = Join-Path $root $zipName
 
 Write-Host "==> npm run build (frontend)" -ForegroundColor Cyan
 Push-Location $root
@@ -26,11 +44,14 @@ if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
 Write-Host "==> staging deploy files" -ForegroundColor Cyan
-Copy-Item (Join-Path $root "dist\*")      $stage -Recurse -Force
-Copy-Item (Join-Path $root "api")         (Join-Path $stage "api") -Recurse -Force
-Copy-Item (Join-Path $root ".htaccess")   (Join-Path $stage ".htaccess") -Force
-New-Item -ItemType Directory -Path (Join-Path $stage "uploads") | Out-Null
-Set-Content -Path (Join-Path $stage "uploads\.gitkeep") -Value "" -Encoding Ascii
+Copy-Item (Join-Path $root "dist\*") $stage -Recurse -Force
+
+if (-not $FrontendOnly) {
+    Copy-Item (Join-Path $root "api")       (Join-Path $stage "api") -Recurse -Force
+    Copy-Item (Join-Path $root ".htaccess") (Join-Path $stage ".htaccess") -Force
+    New-Item -ItemType Directory -Path (Join-Path $stage "uploads") | Out-Null
+    Set-Content -Path (Join-Path $stage "uploads\.gitkeep") -Value "" -Encoding Ascii
+}
 
 if (Test-Path $zip) { Remove-Item $zip -Force }
 
@@ -68,7 +89,12 @@ $fs.Dispose()
 Remove-Item $stage -Recurse -Force
 
 Write-Host "==> Done: $zip" -ForegroundColor Green
-Write-Host "Upload the ZIP CONTENTS into public_html/ on Hostinger, then:" -ForegroundColor Yellow
-Write-Host "   1) Edit api/config.php  (jwtSecret, corsOrigin, database creds)" -ForegroundColor Yellow
-Write-Host "   2) Run once: php api/seed.php" -ForegroundColor Yellow
-Write-Host "   3) Open /admin and change the default password" -ForegroundColor Yellow
+if ($FrontendOnly) {
+    Write-Host "Frontend-only build. Upload it to public_html/ and extract it there." -ForegroundColor Yellow
+    Write-Host "It replaces index.html + assets/ only - api/, uploads/ and .htaccess stay as they are." -ForegroundColor Yellow
+} else {
+    Write-Host "Full deploy build. Upload it to public_html/ and extract it there." -ForegroundColor Yellow
+    Write-Host "WARNING: this zip contains api/config.php with PLACEHOLDER credentials." -ForegroundColor Red
+    Write-Host "         Extracting it over a live install overwrites your real config.php." -ForegroundColor Red
+    Write-Host "         Edit api/config.php again after uploading (or use -FrontendOnly)." -ForegroundColor Red
+}

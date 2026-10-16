@@ -98,7 +98,13 @@ The repository is fully self-contained (React + PHP, MySQL edition already in
 2. Run `deploy.ps1` (Windows) — it builds the frontend and produces
    **`mobiboost-deploy.zip`** containing exactly what goes into `public_html/`
    (`index.html`, `assets/`, `api/`, `.htaccess`, empty `uploads/`).
-3. Upload the **zip contents** to `public_html/` in hPanel File Manager.
+   For **UI-only changes** use `.\deploy.ps1 -FrontendOnly` instead: it produces
+   **`mobiboost-frontend.zip`** with just `index.html` + `assets/`, so it cannot
+   overwrite your live `api/config.php`.
+3. Upload the **zip contents** to `public_html/` in hPanel File Manager and
+   extract it there. If the host creates a wrapper folder, move its contents up
+   into `public_html/` and delete the wrapper. **Never delete `public_html/api/`**
+   — it holds the live `config.php`.
 4. Then follow steps 6–9 below (uploads folder is included; configure
    `api/config.php`, seed, change admin password).
 

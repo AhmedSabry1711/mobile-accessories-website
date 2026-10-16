@@ -2511,7 +2511,7 @@ code {
 
 /* ------------------------------------------------------------------ admin */
 .admin-login {
-  min-height: 70vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2551,7 +2551,7 @@ code {
 .admin-layout {
   display: grid;
   grid-template-columns: 250px 1fr;
-  min-height: calc(100vh - 66px);
+  min-height: 100vh;
   background: #eef1f6;
 }
 
@@ -2563,8 +2563,8 @@ code {
   flex-direction: column;
   gap: 22px;
   position: sticky;
-  top: 66px;
-  height: calc(100vh - 66px);
+  top: 0;
+  height: 100vh;
 }
 
 .admin-brand {

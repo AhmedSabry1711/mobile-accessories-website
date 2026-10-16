@@ -42,6 +42,10 @@
 ```
 
 - **Frontend:** React 18 + Vite + React Router. All pages are static after `npm run build`.
+  `src/App.jsx` declares two shells: a **storefront layout** (Header + page + Footer +
+  WhatsApp button) for `/`, `/shop`, `/products/:id`, `/cart`, `/checkout`,
+  `/order-success/:id`, and a **separate admin shell** for `/admin` and `/admin/panel/*`
+  that renders *no* storefront chrome — so the panel cannot be left except via Sign out.
 - **Backend:** Stateless PHP scripts (`api/*.php`). Each file requires `api/_bootstrap.php`
   (CORS, JSON headers, DB connection, helpers, admin auth). No Composer needed.
   Storage is **MySQL/PDO** — clean, normalized tables (`api/schema.sql`), no JSON blobs.
@@ -220,7 +224,9 @@
 > **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
 
 1. `npm install` → `npm run build` (produces `dist/`) — or just run `deploy.ps1`, which also
-   stages the API, `.htaccess` and `uploads/` into `mobiboost-deploy.zip`.
+   stages the API, `.htaccess` and `uploads/` into `mobiboost-deploy.zip`. For UI-only changes
+   run `.\deploy.ps1 -FrontendOnly` → `mobiboost-frontend.zip` (`index.html` + `assets/` only),
+   which cannot overwrite the live `api/config.php`.
 2. **Create the MySQL database:** hPanel → Databases → MySQL Databases. Import **`api/schema.sql`**
    in phpMyAdmin (or run `php api/migrate.php` over SSH) to create the 12 `mb_*` tables.
 3. Upload **contents of `dist/`** into `public_html/` (includes `index.html`, assets).
