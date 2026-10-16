@@ -8,6 +8,8 @@ Full-stack e-commerce web app for **mobile accessories**, built for **Hostinger 
   supported as an alternative backend (`ext-mongodb`, no Composer needed)
 
 📋 **Progress tracking → [`PROJECT_MAP.md`](./PROJECT_MAP.md)**
+🇪🇬 **دليل صاحب المتجر (بالعربي) → [`OWNER-GUIDE-AR.md`](./OWNER-GUIDE-AR.md)**
+🗄️ **ربط قاعدة بيانات MySQL → [`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**
 
 ---
 

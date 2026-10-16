@@ -296,6 +296,9 @@ now **14 days**, the help column links to the new pages, and the store column de
 
 > The owner gate is **not** a security boundary — the password ships inside the JS bundle.
 > The API still verifies the admin username/password on every request.
+>
+> 📘 Owner-facing documentation (Arabic): [`OWNER-GUIDE-AR.md`](./OWNER-GUIDE-AR.md) —
+> the two-step admin access, media uploads, the support pages and the upload/deploy steps.
 
 ## Pending / Backlog (post-MVP)
 
