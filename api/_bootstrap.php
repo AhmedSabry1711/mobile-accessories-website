@@ -27,22 +27,8 @@ declare(strict_types=1);
 error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', '0');
 
-// Configuration is resolved at runtime (see api/_config.php): the credentials
-// file normally lives OUTSIDE the web root, so redeploying the site can never
-// overwrite or delete it. A missing config is reported as JSON, not a blank 500.
-require __DIR__ . '/_config.php';
-
-try {
-    /** @var array $CONFIG */
-    $CONFIG = mobi_config();
-} catch (Throwable $e) {
-    header('Content-Type: application/json; charset=utf-8', true, 500);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Configuration error: ' . $e->getMessage(),
-    ], JSON_UNESCAPED_SLASHES);
-    exit;
-}
+/** @var array $CONFIG */
+$CONFIG = require __DIR__ . '/config.php';
 
 // Value-type polyfills — no-op when the real mongodb extension is loaded.
 require __DIR__ . '/lib/mongo_compat.php';
@@ -426,7 +412,7 @@ function db_matches(array $doc, array $filter): bool {
 }
 
 // ---------------------------------------------------------------- Table names
-/** Configured table prefix (credentials file → mysql.tablePrefix). */
+/** Configured table prefix (api/config.php → mysql.tablePrefix). */
 function db_prefix(): string {
     global $CONFIG;
     return (string)$CONFIG['mysql']['tablePrefix'];

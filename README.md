@@ -65,11 +65,7 @@ Full-stack e-commerce web app for **mobile accessories**, built for **Hostinger 
 npm install
 
 # 2. Configure the database
-#    api/config.php is git-ignored, so create it from the template first:
-#      copy api/config.example.php api/config.php
-#    then set the 'mysql' block and 'jwtSecret'.
-#    In production the real file lives at <account-home>/mobi-private/config.php
-#    and api/_config.php finds it automatically (no editing needed).
+#    Edit api/config.php -> 'mongoUri' and 'jwtSecret'
 
 # 3. Seed demo data (admin + products + coupons + ads)
 php api/seed.php
@@ -91,49 +87,26 @@ Default admin login after seeding: **`admin` / `admin123`** (change it immediate
 
 ## Production deployment (Hostinger)
 
-> 🚀 **Recommended: deploy via Git.** `main` is the source branch; a GitHub Action
-> builds a **`deploy`** branch that is exactly what `public_html/` should contain,
-> and Hostinger pulls that. This is the supported way to avoid the "api/ folder
-> disappears after every deploy" trap — see
-> **[`HOSTINGER-GIT-DEPLOY.md`](./HOSTINGER-GIT-DEPLOY.md)**.
->
-> 🔐 Credentials never live in the web root: put the real config at
-> `<account-home>/mobi-private/config.php` and `api/_config.php` finds it
-> automatically. `api/config.php` is git-ignored and never shipped.
->
 > 🧭 **Setting up the MySQL database?** The connection + schema + admin-account flow is written
 > out click-by-click in **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
 
-### Option A — Git deployment (recommended)
-
-1. `git push origin main` — the **Publish deploy branch** Action builds and
-   force-pushes the `deploy` branch (`index.html`, `assets/`, `api/`, `.htaccess`,
-   `uploads/.gitkeep`; never `api/config.php`).
-2. hPanel → **Git** → repository `.../mobile-accessories-website.git`,
-   **branch `deploy`**, directory blank (= `public_html`). The target folder must
-   be empty for the very first deployment.
-3. Put the credentials at `<account-home>/mobi-private/config.php` (one level
-   **above** `public_html`).
-
-Prefer no CI? Run `deploy.ps1 -Publish` locally — it produces the same branch.
-
-Full walkthrough, verification checklist, troubleshooting table and rollback plan:
-**[`HOSTINGER-GIT-DEPLOY.md`](./HOSTINGER-GIT-DEPLOY.md)**.
-
-### Option B — Upload a ZIP by hand (fallback / one-off)
+### From this repository (quickest)
+The repository is fully self-contained (React + PHP, MySQL edition already in
+`api/`). After cloning on any machine with Node + PHP:
 
 1. `npm install`
 2. Run `deploy.ps1` (Windows) — it builds the frontend and produces
    **`mobiboost-deploy.zip`** containing exactly what goes into `public_html/`
-   (`index.html`, `assets/`, `api/`, `.htaccess`, empty `uploads/`) and **no
-   credentials**, so it is safe to extract over a live install.
-   For **UI-only changes** use `deploy.ps1 -FrontendOnly` instead: it produces
-   **`mobiboost-frontend.zip`** with just `index.html` + `assets/`.
+   (`index.html`, `assets/`, `api/`, `.htaccess`, empty `uploads/`).
+   For **UI-only changes** use `.\deploy.ps1 -FrontendOnly` instead: it produces
+   **`mobiboost-frontend.zip`** with just `index.html` + `assets/`, so it cannot
+   overwrite your live `api/config.php`.
 3. Upload the **zip contents** to `public_html/` in hPanel File Manager and
    extract it there. If the host creates a wrapper folder, move its contents up
-   into `public_html/` and delete the wrapper.
-4. Then follow the manual steps below (uploads folder is included; create
-   `~/mobi-private/config.php`, seed, change admin password).
+   into `public_html/` and delete the wrapper. **Never delete `public_html/api/`**
+   — it holds the live `config.php`.
+4. Then follow steps 6–9 below (uploads folder is included; configure
+   `api/config.php`, seed, change admin password).
 
 ### Manual steps (same result, step by step)
 
@@ -150,38 +123,28 @@ Full walkthrough, verification checklist, troubleshooting table and rollback pla
 5. Upload the repo's **`.htaccess`** into `public_html/` (enables React client-side routing and
    forwards the `Authorization` header to PHP for the admin API).
 6. Create a writable **`public_html/uploads/`** folder for product images and ad media.
-7. **Put the credentials OUTSIDE the web root** — create
-   **`<account-home>/mobi-private/config.php`** (one level above `public_html/`)
-   from **`api/config.example.php`**:
+7. Edit **`public_html/api/config.php`**:
    - `jwtSecret` → a long random secret
-   - `corsOrigin` → your domain, e.g. `https://mobiboost.store`
+   - `corsOrigin` → your domain, e.g. `https://mobiboost.com`
+   - **MongoDB:** `mongoUri` → your Atlas connection string
    - **MySQL:** the `mysql` block → `host`, `database`, `username`, `password`, `tablePrefix`
-   - **MongoDB (legacy):** `mongoUri` → your Atlas connection string
-
-   `api/_config.php` looks there first, so no deploy can ever overwrite it.
-   (Keeping a copy at `public_html/api/config.php` still works and takes
-   precedence only if the outside file is absent.)
 8. Seed once via SSH/CLI: `php public_html/api/seed.php`.
 9. Visit your domain, then sign in at `/admin` and **change the admin password**.
 
 ### Folder layout after deployment
 
 ```
-<account-home>/
-├── mobi-private/
-│   └── config.php        # 🔐 credentials — OUTSIDE the web root, never redeployed
-└── public_html/
-    ├── index.html            # React build
-    ├── assets/               # JS/CSS hashed bundles
-    ├── .htaccess             # SPA fallback + Authorization passthrough
-    ├── uploads/              # product images / ad media (untracked runtime data)
-    └── api/                  # PHP REST API
-        ├── _config.php       # locates the credentials file (see above)
-        ├── config.example.php
-        ├── _bootstrap.php    # MySQL/PDO edition
-        ├── lib/              # store.php + mongo_compat.php
-        ├── products.php …    # public endpoints
-        └── admin/…           # protected endpoints
+public_html/
+├── index.html            # React build
+├── assets/               # JS/CSS hashed bundles
+├── .htaccess             # SPA fallback
+├── uploads/              # product images / ad media
+└── api/                  # PHP REST API
+    ├── config.php
+    ├── _bootstrap.php    # MongoDB or MySQL edition
+    ├── lib/              # store.php + (MySQL) mongo_compat.php
+    ├── products.php …    # public endpoints
+    └── admin/…           # protected endpoints
 ```
 
 ---
