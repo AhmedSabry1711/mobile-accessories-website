@@ -4,13 +4,17 @@
 > الموقع بيشتغل بـ **PHP 8 + MySQL (PDO)** — **مش محتاج MongoDB** خالص.
 >
 > الوقت المتوقع: **10–15 دقيقة**. لو حصلت مشكلة في أي خطوة، شوف جدول حل المشاكل في آخر الدليل.
+>
+> 🚀 **بتستخدم النشر عبر Git؟** اقرأ [`HOSTINGER-GIT-DEPLOY.md`](./HOSTINGER-GIT-DEPLOY.md) كمان —
+> ده الدليل اللي بيمنع اختفاء مجلد `api/` بعد كل Deploy، وبيشرح مكان ملف
+> الاعتمادات الجديد (`~/mobi-private/config.php` بره `public_html`).
 
 ---
 
 ## الرحلة في سطر واحد
 
 ```
-hPanel → أنشئ داتابيز  →  api/config.php  →  استورد api/schema.sql
+hPanel → أنشئ داتابيز  →  ~/mobi-private/config.php  →  استورد api/schema.sql
         →  اتأكد بـ api/health.php  →  اعمل أدمن → /admin → نظّف
 ```
 
@@ -56,37 +60,59 @@ hPanel → أنشئ داتابيز  →  api/config.php  →  استورد api/s
 
 ---
 
-## 2) حطّ بيانات الاتصال في `api/config.php`
+## 2) حطّ بيانات الاتصال في ملف الاعتمادات (بره `public_html`)
 
-افتح الملف: **hPanel → Files → File Manager → `public_html/api/config.php`** → كليك يمين → **Edit**.
+> ⭐ **مهم:** من دلوقتي الملف مكانه **بره** `public_html` — كده أي إعادة نشر
+> (Deploy) بستبدل مجلد الموقع بالكامل **مش هتقدر** تمسحه أو تبدّل بياناته.
+> الكود بيدوّر عليه لوحده. الشرح الكامل: [`HOSTINGER-GIT-DEPLOY.md`](./HOSTINGER-GIT-DEPLOY.md).
 
-دور على البلوك `'mysql' => [ ... ]` واستبدله بالكود ده بالظبط (بالقيم بتاعتك):
-
-```php
-'mysql' => [
-    'host'        => 'localhost',
-    'port'        => 3306,
-    'database'    => 'u118872087_mobi',
-    'username'    => 'u118872087_user',
-    'password'    => 'اكتب_هنا_الباسورد_اللي_نسخته',
-    'tablePrefix' => 'mb_',
-],
-```
-
-وانزل تحت خالص وظبّط الاتنين دول كمان:
+**الطريقة:**
+1. **hPanel → Files → File Manager**
+2. انزل من `public_html` لمجلد **Home** (الرئيسي) — مستواه أعلى بـ Level واحد.
+3. **+ New folder** → سمّيه **`mobi-private`** (بالظبط كده).
+4. ادخل عليه → **+ New file** → سمّيه **`config.php`**.
+5. كليك يمين عليه → **Edit** → الصق المحتوى ده (خُده من `api/config.example.php`)، وبعدين **Save**:
 
 ```php
-// سر طويل عشوائي لتوقيع توكن الأدمن — مينفعش يفضل القيمة الافتراضية
-'jwtSecret'  => 'نص_طويل_عشوائي_64_حرف_على_الأقل',
+<?php
+declare(strict_types=1);
 
-// الدومين بتاعك بدل النجمة
-'corsOrigin' => 'https://mobiboost.store',
+return [
+    'mongoUri' => 'mongodb+srv://mobiuser:ChangeMe123@cluster0.example.mongodb.net',
+    'dbName'   => 'mobi_boost',
+
+    'mysql' => [
+        'host'        => 'localhost',
+        'port'        => 3306,
+        'database'    => 'u118872087_mobi',
+        'username'    => 'u118872087_user',
+        'password'    => 'اكتب_هنا_الباسورد_اللي_نسخته',
+        'tablePrefix' => 'mb_',
+    ],
+
+    // سر طويل عشوائي لتوقيع توكن الأدمن — مينفعش يفضل القيمة الافتراضية
+    'jwtSecret'  => 'نص_طويل_عشوائي_64_حرف_على_الأقل',
+
+    // الدومين بتاعك بدل النجمة
+    'corsOrigin' => 'https://mobiboost.store',
+
+    'currencySymbol' => 'ج.م',
+    'currencyCode'   => 'EGP',
+    'pageSize'       => 24,
+];
 ```
 
 - توليد نص عشوائي: `openssl rand -hex 32` في أي تيرمنال، أو أي مولّد نصوص عشوائية.
-- اضغط **Save**.
+- ⚠️ لو محرر الملفات سألك عن الترميز، اختار **UTF-8 بدون BOM** — علامة الـBOM
+  ممكن تعطّل كل ردود الـJSON.
+- ℹ️ `uploadDir` و `uploadUrl` مش مطلوبين هنا — الكود بيحسبهم تلقائيًا.
 
-> 🔒 `api/config.php` جواه الباسورد والسر — متحطّهوش في Git ومتشاركوش مع حد.
+> 🔒 الملف ده جواه الباسورد والسر. **متلمسوش Git** (هو مستثنى أصلًا)، ومتشاركوش مع حد.
+> ولو حبيت تستخدم متغيرات بيئة بدلًا منه، في `.htaccess` سطر جاهز:
+> `SetEnv MOBI_CONFIG /home/u118872087/mobi-private/config.php`
+
+**التحقق:** افتح `https://mobiboost.store/api/health.php` — لازم تشوف
+`"loaded_from"` بيشاور على مسار `mobi-private/config.php`.
 
 ---
 
@@ -224,7 +250,7 @@ UPDATE `mb_users` SET `id` = '6423bbc1a2b2f6f18677a46f' WHERE `username` = 'admi
 php api/seed.php
 ```
 
-> ⚠️ الطريقة دي بتخلي `api/config.php` بيشاور على داتابيز الإنتاج — ارجع للقيم المحلية بعد ما تخلص.
+> ⚠️ الطريقة دي بتخلي `api/config.php` (المحلي) بيشاور على داتابيز الإنتاج — ارجع للقيم المحلية بعد ما تخلص.
 
 ---
 
@@ -257,8 +283,9 @@ php api/seed.php
 - [ ] امسح الـCron Job بتاع الـseed لو استخدمت الطريقة (ب)
 - [ ] غيّر باسورد الأدمن
 - [ ] اتأكد إن جداول `mb_legacy_*` مش محتاجها → امسحها
-- [ ] اتأكد إن `api/config.php` مش متسرّب في أي مكان عام
+- [ ] اتأكد إن ملف الاعتمادات (`~/mobi-private/config.php`) **بره** `public_html` ومش متسرّب في أي مكان عام
 - [ ] `jwtSecret` مش القيمة الافتراضية
+- [ ] امسح `public_html/api/config.php` لو كان موجود من قبل (بقى مش محتاج)
 
 ---
 
@@ -277,7 +304,9 @@ php api/seed.php
 | العرض | السبب المحتمل | الحل |
 |---|---|---|
 | الموقع يفتح لكن المنتجات فاضية | الجداول فاضية (مفيش seed) أو endpoint بيرجّع خطأ | افتح `/api/products.php` وشوف الرسالة؛ راجع خطوة 5 |
-| `db.connected: false` | بيانات الاتصال غلط في `config.php` | راجع خطوة 2، وجرّب الـHostين (`localhost` والاسم الطويل) |
+| `db.connected: false` | بيانات الاتصال غلط في ملف الاعتمادات | راجع خطوة 2، وشوف `loaded_from` في `/api/health.php` بيشاور على إيه، وجرّب الـHostين (`localhost` والاسم الطويل) |
+| `Configuration error: No configuration file found` | ملف الاعتمادات مش موجود في أي مكان من التلاتة | راجع خطوة 2 — لازم `~/mobi-private/config.php` موجود بالاسم ده بالظبط |
+| ردود JSON بيسبقها رمز غريب `﻿` | علامة BOM في ملف الاعتمادات | أعِد حفظ الملف بـ **UTF-8 بدون BOM** |
 | كل الجداول `MISSING` | `schema.sql` ماتستوردش | كرّر خطوة 3 (تأكد إنك مستورد على نفس الداتابيز) |
 | `/admin` بيرجّع 500 | مفيش مستخدم أدمن أو `mb_users` فاضل | نفّذ خطوة 5 (ج) |
 | **"انتهت الجلسة" بعد تسجيل دخول ناجح** | عمود `mb_users.id` مش 24 حرف hex (أو فاضي) → التوكن بيطلع بـ`sub` غير صالح → كل طلب محمي بيرجّع 401 | خطوة 5 (ج) → `UPDATE mb_users SET id='6423bbc1a2b2f6f18677a46f' WHERE username='admin'` |

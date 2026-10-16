@@ -4,6 +4,11 @@
 RewriteEngine On
 RewriteBase /
 
+# --- Optional: point the API at a credentials file by absolute path ----------
+# The API already finds <account-home>/mobi-private/config.php on its own, so
+# this is only needed if you keep the file somewhere else. Uncomment and edit.
+# SetEnv MOBI_CONFIG /home/u118872087/mobi-private/config.php
+
 # Hand the Authorization header through to PHP. On CGI/FastCGI setups — including
 # some Hostinger plans — Apache drops it, and then every Bearer-authenticated admin
 # call answers 401 ("Session expired") even though the token itself is valid.

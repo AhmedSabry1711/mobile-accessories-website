@@ -113,7 +113,9 @@
 ```
 /                              (repository root)
 ├── api/                       PHP REST API  ->  upload to public_html/api/
-│   ├── config.php             DB settings (Mongo URI + MySQL creds), JWT secret, currency
+│   ├── _config.php            Resolves the credentials file at runtime (env -> ~/mobi-private/config.php -> api/config.php)
+│   ├── config.example.php     Committable credentials TEMPLATE (api/config.php is git-ignored)
+│   ├── config.php             🔒 Local dev only — NOT tracked, NOT part of any deploy artifact
 │   ├── _bootstrap.php         CORS, JSON helpers, MySQL storage layer, token auth
 │   ├── lib/store.php          Cart/coupon/stock logic
 │   ├── lib/mongo_compat.php   BSON value-type polyfills (ObjectId/UTCDateTime/Regex)
@@ -127,7 +129,7 @@
 │   ├── settings.php           GET public settings (shipping, WhatsApp, categories, ads)
 │   ├── auth.php               POST admin login, GET current admin
 │   ├── upload.php             POST image/video upload (admin)
-│   ├── health.php             Deployment diagnostics (delete once verified)
+│   ├── health.php             Deployment diagnostics (reports loaded_from; delete once verified)
 │   ├── seed.php               CLI demo-data seeder (admin, products, coupons, ads)
 │   └── admin/
 │       ├── dashboard.php      Revenue / profit / orders analytics
@@ -138,11 +140,14 @@
 │       ├── reviews.php        Review moderation (list / delete)
 │       └── settings.php       Shipping rules, WhatsApp number, categories
 ├── api-mysql/                 MySQL/PDO edition sources (no ext-mongodb needed)
+│   ├── _config.php            Mirror of api/_config.php
 │   ├── _bootstrap.php         PDO connection + storage helpers (same mongo_* API)
 │   ├── lib/store.php          Cart/coupon/stock logic (MySQL edition)
 │   ├── lib/mongo_compat.php   BSON value-type polyfills (ObjectId/UTCDateTime/Regex)
 │   ├── schema.sql             Normalized tables (products/orders/reviews/...)
 │   └── README.md              Activation + upgrade steps & trade-offs
+├── .github/workflows/
+│   └── deploy.yml             Builds the frontend and publishes the `deploy` branch (what Hostinger pulls)
 ├── src/                       React source
 │   ├── main.jsx, App.jsx, styles.css
 │   ├── api/client.js          fetch wrapper (auth header + error handling)
@@ -220,13 +225,27 @@
 
 ## Deployment to Hostinger (Unlimited Plan)
 
+> 🚀 **Git deployment (recommended) — [`HOSTINGER-GIT-DEPLOY.md`](./HOSTINGER-GIT-DEPLOY.md).**
+> `main` is the source branch; the **Publish deploy branch** GitHub Action
+> (`.github/workflows/deploy.yml`) builds the frontend and force-pushes a `deploy`
+> branch whose tree is exactly `public_html/` (`index.html`, `assets/`, `api/`,
+> `.htaccess`, `uploads/.gitkeep` — and never `api/config.php`). Hostinger pulls
+> that branch, so a full directory replacement is correct by construction and
+> cannot delete the API again. `.​\deploy.ps1 -Publish` does the same locally.
+>
+> 🔐 **Credentials live outside the web root:** `<account-home>/mobi-private/config.php`.
+> `api/_config.php` resolves, in order, `$MOBI_CONFIG` → that file → `api/config.php`.
+> Model file: `api/config.example.php`.
+>
 > 📘 Step-by-step database walkthrough (hPanel → config → phpMyAdmin import → admin account):
 > **[`HOSTINGER-SQL-SETUP.md`](./HOSTINGER-SQL-SETUP.md)**.
 
+### By hand (fallback / one-off)
+
 1. `npm install` → `npm run build` (produces `dist/`) — or just run `deploy.ps1`, which also
-   stages the API, `.htaccess` and `uploads/` into `mobiboost-deploy.zip`. For UI-only changes
-   run `.\deploy.ps1 -FrontendOnly` → `mobiboost-frontend.zip` (`index.html` + `assets/` only),
-   which cannot overwrite the live `api/config.php`.
+   stages the API, `.htaccess` and `uploads/` into `mobiboost-deploy.zip`, **without any
+   credentials**. For UI-only changes run `.\deploy.ps1 -FrontendOnly` →
+   `mobiboost-frontend.zip` (`index.html` + `assets/` only).
 2. **Create the MySQL database:** hPanel → Databases → MySQL Databases. Import **`api/schema.sql`**
    in phpMyAdmin (or run `php api/migrate.php` over SSH) to create the 12 `mb_*` tables.
 3. Upload **contents of `dist/`** into `public_html/` (includes `index.html`, assets).
@@ -234,11 +253,25 @@
 5. Upload **`.htaccess`** (repo root) into `public_html/` (SPA routing; it also forwards the
    `Authorization` header to PHP, which the admin Bearer tokens need).
 6. Create `public_html/uploads/` (writable) for product images/ad media.
-7. Edit `public_html/api/config.php`: set `jwtSecret`, `corsOrigin`, and the `mysql` block
-   (host, port, database, username, password, `tablePrefix`).
+7. Create **`<account-home>/mobi-private/config.php`** (outside the web root) from
+   `api/config.example.php`: set `jwtSecret`, `corsOrigin`, and the `mysql` block
+   (host, port, database, username, password, `tablePrefix`). Do **not** ship it inside
+   `public_html/`.
 8. Seed demo data once (SSH/CLI): `php public_html/api/seed.php` → admin `admin / admin123`
    (or insert the admin row by hand — see the guide's step 5c).
 9. Visit the site → log into `/admin` and change the admin password immediately.
+
+### Why the API folder used to vanish
+
+Hostinger's Git deployment runs **no build step** — it copies the committed files
+and replaces the target directory. Because `dist/` is git-ignored and
+`api/config.php` is *not* part of the deploy artifact, deploying `main` (source)
+straight into `public_html` left a web root with no frontend and no credentials,
+and every subsequent deploy wiped whatever had been uploaded by hand. The
+`deploy` branch fixes this: the web root is now a generated artifact, so nothing
+in `public_html` is maintained outside of git.
+
+> ⚠️ **Do not point Hostinger at `main`.** Use the `deploy` branch.
 
 ## Local Development
 

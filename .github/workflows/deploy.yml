@@ -1,0 +1,108 @@
+# Mobi Boost — publish a deployable tree to the `deploy` branch.
+#
+# WHY THIS EXISTS
+# ---------------
+# Hostinger's Git deployment does not run a build command: it copies the files
+# that are committed in the branch into the target directory (public_html by
+# default) and *replaces* what is there. Our repo, however, is a Vite project —
+# the built frontend lives in the git-ignored `dist/` folder, so deploying `main`
+# straight to public_html would ship no frontend at all, and any later deploy
+# would wipe whatever was uploaded by hand (api/, .htaccess, uploads/).
+#
+# So `main` stays the *source* branch and this workflow builds the *artifact*:
+# a `deploy` branch whose tree is exactly the contents of public_html —
+# index.html + assets/ + api/ + .htaccess + uploads/. Replacing the whole
+# directory on every deploy is then correct by construction, and nothing can be
+# lost, because nothing in public_html is maintained outside of git anymore.
+#
+# The only exception is the credentials file: api/config.php is deliberately NOT
+# in the artifact. The real one lives at <account-home>/mobi-private/config.php,
+# outside the web root, and api/_config.php finds it there.
+#
+# Point Hostinger at: repository = this repo, branch = `deploy`, directory = blank
+# (i.e. public_html). See HOSTINGER-GIT-DEPLOY.md for the full walkthrough.
+
+name: Publish deploy branch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Needed to force-push the deploy branch.
+permissions:
+  contents: write
+
+# Never let two runs race on the same branch.
+concurrency:
+  group: publish-deploy-branch
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Assemble the public_html tree
+        run: |
+          set -euo pipefail
+          rm -rf .deploy
+          mkdir -p .deploy
+
+          # 1) React production build: index.html, assets/, brand icons, manifest.
+          cp -R dist/. .deploy/
+
+          # 2) PHP API — minus the credentials file, which must never be in git.
+          mkdir -p .deploy/api
+          cp -R api/. .deploy/api/
+          rm -f .deploy/api/config.php .deploy/api/config.private.php
+
+          # 3) Apache rules: SPA fallback + Authorization passthrough for bearer tokens.
+          cp .htaccess .deploy/.htaccess
+
+          # 4) Writable media folder. Only the folder is versioned; the files the
+          #    shop owner uploads are untracked, so Hostinger's pull leaves them
+          #    in place instead of deleting them.
+          mkdir -p .deploy/uploads
+          : > .deploy/uploads/.gitkeep
+
+          # Fail loudly rather than publishing a broken web root.
+          test -f .deploy/index.html
+          test -f .deploy/api/_bootstrap.php
+          test -f .deploy/api/_config.php
+          test -f .deploy/.htaccess
+          if [ -e .deploy/api/config.php ]; then
+            echo "::error::api/config.php leaked into the deploy artifact"; exit 1
+          fi
+          echo "--- artifact ---"
+          ls -la .deploy
+
+      - name: Publish to the deploy branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd .deploy
+          git init -q
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b deploy
+          git add -A
+          git commit -q -m "deploy: ${GITHUB_SHA::7} from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" deploy
+          echo "Published ${GITHUB_SHA::7} to the deploy branch."

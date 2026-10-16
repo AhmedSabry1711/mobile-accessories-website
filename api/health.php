@@ -31,10 +31,12 @@ $report = [
 $CONFIG = null;
 
 // ---- config --------------------------------------------------------------
+require __DIR__ . '/_config.php';
 try {
-    $CONFIG = require __DIR__ . '/config.php';
+    $CONFIG = mobi_config();
     $m = $CONFIG['mysql'];
     $report['config'] = [
+        'loaded_from'  => mobi_config_path(),
         'host'         => $m['host'],
         'port'         => (int)$m['port'],
         'database'     => $m['database'],
@@ -48,7 +50,7 @@ try {
 }
 
 // ---- uploads folder ------------------------------------------------------
-$uploadDir = dirname(__DIR__) . '/uploads';
+$uploadDir = $CONFIG['uploadDir'] ?? dirname(__DIR__) . '/uploads';
 $report['uploads_writable'] = is_dir($uploadDir)
     ? (is_writable($uploadDir) ? true : 'exists but NOT writable')
     : ('missing: ' . $uploadDir);

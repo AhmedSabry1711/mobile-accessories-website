@@ -9,6 +9,7 @@ Keep the copies **byte-identical** when you edit either one:
 | File in `api-mysql/`        | Mirrors                    | Purpose                                          |
 | --------------------------- | -------------------------- | ------------------------------------------------ |
 | `_bootstrap.php`            | `api/_bootstrap.php`       | MySQL/PDO connection + storage helpers           |
+| `_config.php`               | `api/_config.php`          | Credentials-file resolver (env → `~/mobi-private` → `api/`) |
 | `lib/store.php`             | `api/lib/store.php`        | Cart/coupon/stock logic (dates as ISO strings)   |
 | `lib/mongo_compat.php`      | `api/lib/mongo_compat.php` | BSON value-type polyfills                        |
 | `schema.sql`                | `api/schema.sql`           | Creates the 12 normalized tables                 |
@@ -17,10 +18,26 @@ Keep the copies **byte-identical** when you edit either one:
 document schema (see below). For the full Hostinger walkthrough see
 [`../HOSTINGER-SQL-SETUP.md`](../HOSTINGER-SQL-SETUP.md).
 
+> 🔐 **Where the credentials file belongs.** `api/config.php` is **not tracked by
+> git** and is **not part of any deploy artifact**. On the live site put the file
+> at `<account-home>/mobi-private/config.php` — one level **above** `public_html`
+> — so a redeploy that replaces the whole web root cannot delete it.
+> `api/_config.php` resolves it automatically, in this order:
+> `$MOBI_CONFIG` → `<account-home>/mobi-private/config.php` → `api/config.php`.
+> Start from the committable template, `api/config.example.php`.
+> See [`../HOSTINGER-GIT-DEPLOY.md`](../HOSTINGER-GIT-DEPLOY.md).
+
 ## Set it up
 
-1. **Add MySQL credentials** to `api/config.php` (the `'mysql' => [...]` block is
-   already there). Example:
+1. **Add MySQL credentials.** For local development, copy the template and edit it:
+
+   ```bash
+   cp api/config.example.php api/config.php
+   ```
+
+   In production, create `<account-home>/mobi-private/config.php` instead (outside
+   the web root). The `'mysql' => [...]` block looks like this — every value can
+   also be supplied as an environment variable, which takes precedence:
 
    ```php
    'mysql' => [

@@ -23,7 +23,10 @@ if (PHP_SAPI !== 'cli') {
     exit("This one-off upgrade must be run from the command line:\n\n    php api/migrate.php\n");
 }
 
-$CONFIG = require __DIR__ . '/config.php';
+require __DIR__ . '/_config.php';
+
+/** @var array $CONFIG */
+$CONFIG = mobi_config();
 $mysql = $CONFIG['mysql'];
 $prefix = (string)$mysql['tablePrefix'];
 $dbName = (string)$mysql['database'];
