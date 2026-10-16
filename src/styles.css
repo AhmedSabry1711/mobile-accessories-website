@@ -3681,7 +3681,7 @@ code {
 }
 
 .footer-col h4 a:hover {
-  color: var(--primary);
+  color: #93c5fd;
 }
 
 button.footer-admin {
