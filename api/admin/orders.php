@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../_bootstrap.php';
 
-$STATUSES = ['pending', 'processing', 'completed', 'cancelled'];
+$STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     require_admin();
@@ -25,6 +25,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!$order) {
             fail('Order not found', 404);
         }
+
+        // ?label=1 — data needed to print the shipping label: a stable, signed
+        // confirmation code + the absolute QR URL + the store currency. The raw
+        // salt never leaves the server.
+        if (!empty($_GET['label'])) {
+            $ready = order_columns_ready();
+            if (!$ready['status_confirmed']) {
+                fail('Order confirmation is not available right now.', 503);
+            }
+            $salt = order_confirm_salt($oid, true);
+            if ($salt === null) {
+                fail('Could not create a confirmation code for this order.', 500);
+            }
+            $code = order_confirm_code($oid, $salt);
+            $settings = store_settings();
+            ok([
+                'code' => $code,
+                'url' => order_confirm_url($code),
+                'currency' => [
+                    'symbol' => (string)($settings['currency']['symbol'] ?? '$'),
+                    'code' => (string)($settings['currency']['code'] ?? 'USD'),
+                ],
+            ]);
+        }
+
         ok(order_payload($order));
     }
 
@@ -80,7 +105,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         restore_stock((array)$order['items']);
     }
 
-    mongo_update('orders', ['_id' => $oid], ['$set' => ['status' => $status, 'updatedAt' => new MongoDB\BSON\UTCDateTime()]]);
+    $changes = ['status' => $status, 'updatedAt' => new MongoDB\BSON\UTCDateTime()];
+    mongo_update('orders', ['_id' => $oid], ['$set' => $changes]);
+
+    // Stamp the confirmation time when an admin confirms an order manually, so
+    // the dashboard and the public page show the same information. Written as a
+    // direct SQL update because the generic order writer does not touch this
+    // column (and must never clear it on unrelated updates).
+    if ($status === 'confirmed' && ($order['status'] ?? '') !== 'confirmed') {
+        $ready = order_columns_ready();
+        if ($ready['confirmed_at']) {
+            $p = db_prefix();
+            $stmt = db()->prepare(
+                "UPDATE `{$p}orders` SET `confirmed_at` = UTC_TIMESTAMP()
+                  WHERE `id` = ? AND `confirmed_at` IS NULL"
+            );
+            $stmt->execute([$oid]);
+        }
+    }
     $updated = mongo_find_one('orders', ['_id' => $oid]);
     ok(order_payload($updated));
 }

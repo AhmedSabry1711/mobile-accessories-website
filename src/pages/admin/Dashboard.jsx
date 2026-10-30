@@ -74,6 +74,10 @@ export default function Dashboard() {
           <strong>{stats.pendingCount}</strong>
         </div>
         <div className="mini-stat">
+          <span>{t('admin.dashboard.confirmed')}</span>
+          <strong>{stats.confirmedCount ?? 0}</strong>
+        </div>
+        <div className="mini-stat">
           <span>{t('admin.dashboard.processing')}</span>
           <strong>{stats.processingCount}</strong>
         </div>

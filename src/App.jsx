@@ -12,6 +12,7 @@ import ProductDetails from './pages/ProductDetails.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import OrderSuccess from './pages/OrderSuccess.jsx';
+import OrderConfirm from './pages/OrderConfirm.jsx';
 import InfoPage from './pages/InfoPage.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
@@ -38,6 +39,11 @@ export default function App() {
     <div className="app">
       <ScrollToTop />
       <Routes>
+        {/* Public order confirmation — opened by scanning the shipping-label
+            QR. Kept outside the storefront shell so it stays focused and fast
+            on a phone. Opening it is read-only; see pages/OrderConfirm.jsx. */}
+        <Route path="/confirm/:code" element={<OrderConfirm />} />
+
         {/* Admin: its own chrome — no storefront header, footer or WhatsApp button.
             The only way out of the panel is the Sign-out button. */}
         <Route path="/admin" element={<AdminLogin />} />

@@ -30,6 +30,11 @@ return [
     'currencySymbol' => '$',
     'currencyCode' => 'USD',
 
+    // Public site URL used to build the QR links printed on shipping labels.
+    // Leave empty to derive it from the admin request; set it in production,
+    // e.g. 'https://mobiboost.com' (no trailing slash).
+    'appUrl' => getenv('APP_URL') ?: '',
+
     // CORS — set to your shop domain in production, e.g. 'https://mobiboost.com'
     'corsOrigin' => getenv('CORS_ORIGIN') ?: '*',
 

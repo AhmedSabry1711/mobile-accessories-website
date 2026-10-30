@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { api, money } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
-import { IconSearch, IconClose } from '../../components/icons.jsx';
+import { IconSearch, IconClose, IconPrinter } from '../../components/icons.jsx';
+import ShippingLabel from '../../components/ShippingLabel.jsx';
 
-const STATUSES = ['pending', 'processing', 'completed', 'cancelled'];
+const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'];
 
 export default function Orders() {
   const { toast } = useStore();
@@ -14,6 +15,8 @@ export default function Orders() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [label, setLabel] = useState(null);
+  const [labelLoading, setLabelLoading] = useState(null);
 
   const load = (status = '', search = '') => {
     setLoading(true);
@@ -31,6 +34,23 @@ export default function Orders() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Fetch the signed confirmation code for this order, then open the label.
+   * The code is generated server-side (and stored as a random salt), so the
+   * printed QR is stable for reprints but useless for any other order.
+   */
+  const openLabel = async (order) => {
+    setLabelLoading(order.id);
+    try {
+      const data = await api.get(`/api/admin/orders.php?id=${order.id}&label=1`);
+      setLabel({ order, confirmUrl: data?.url || '', currency: data?.currency });
+    } catch (error) {
+      toast(error.message, 'error');
+    } finally {
+      setLabelLoading(null);
+    }
+  };
 
   const submitSearch = (event) => {
     event.preventDefault();
@@ -131,6 +151,15 @@ export default function Orders() {
                     <button className="btn btn-outline btn-sm" onClick={() => setSelected(order)}>
                       {t('admin.orders.view')}
                     </button>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => openLabel(order)}
+                      disabled={labelLoading === order.id}
+                      title={t('admin.orders.label.shipping')}
+                    >
+                      <IconPrinter size={16} />
+                      {t('admin.orders.label.short')}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -168,6 +197,12 @@ export default function Orders() {
                 <br />
                 {selected.customer?.address}
               </p>
+              {selected.confirmedAt && (
+                <p className="muted">
+                  {t('admin.orders.confirmedAt')}:{' '}
+                  {new Date(selected.confirmedAt).toLocaleString(locale)}
+                </p>
+              )}
             </div>
 
             <div className="modal-section">
@@ -213,6 +248,14 @@ export default function Orders() {
             </div>
 
             <div className="modal-actions">
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => openLabel(selected)}
+                disabled={labelLoading === selected.id}
+              >
+                <IconPrinter size={16} />
+                {t('admin.orders.label.print')}
+              </button>
               {STATUSES.map((status) => (
                 <button
                   key={status}
@@ -225,6 +268,15 @@ export default function Orders() {
             </div>
           </div>
         </div>
+      )}
+
+      {label && (
+        <ShippingLabel
+          order={label.order}
+          settings={{ currency: label.currency }}
+          confirmUrl={label.confirmUrl}
+          onClose={() => setLabel(null)}
+        />
       )}
     </div>
   );

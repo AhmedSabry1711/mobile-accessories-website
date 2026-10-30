@@ -24,6 +24,7 @@ $revenue = 0.0;
 $cost = 0.0;
 $completed = 0;
 $pending = 0;
+$confirmed = 0;
 $processing = 0;
 $productStats = [];
 
@@ -33,6 +34,8 @@ foreach ($orders as $order) {
         $completed++;
     } elseif ($status === 'pending') {
         $pending++;
+    } elseif ($status === 'confirmed') {
+        $confirmed++;
     } elseif ($status === 'processing') {
         $processing++;
     }
@@ -95,6 +98,7 @@ ok([
     'ordersCount' => count($orders),
     'completedCount' => $completed,
     'pendingCount' => $pending,
+    'confirmedCount' => $confirmed,
     'processingCount' => $processing,
     'productsCount' => count($products),
     'reviewsCount' => mongo_count('reviews'),

@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `mb_product_variant_colors` (
 CREATE TABLE IF NOT EXISTS `mb_orders` (
   `id`               CHAR(24)      NOT NULL,
   `order_number`     VARCHAR(32)   NOT NULL,
-  `status`           ENUM('pending','processing','completed','cancelled') NOT NULL DEFAULT 'pending',
+  `status`           ENUM('pending','confirmed','processing','completed','cancelled') NOT NULL DEFAULT 'pending',
   `subtotal`         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `discount`         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `coupon_code`      VARCHAR(20)   NULL DEFAULT NULL,
@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS `mb_orders` (
   `customer_name`    VARCHAR(80)   NOT NULL,
   `customer_address` VARCHAR(300)  NOT NULL,
   `customer_phone`   VARCHAR(20)   NOT NULL,
+  `confirm_salt`     CHAR(32)      NULL DEFAULT NULL,
+  `confirmed_at`     DATETIME      NULL DEFAULT NULL,
   `created_at`       DATETIME      NULL DEFAULT NULL,
   `updated_at`       DATETIME      NULL DEFAULT NULL,
   PRIMARY KEY (`id`),

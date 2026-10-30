@@ -430,6 +430,74 @@ function db_settings_id(): string {
     return '000000000000000000000001';
 }
 
+/**
+ * Make sure the columns used by the QR order-confirmation feature exist.
+ *
+ * The two columns and the extra `confirmed` status are added lazily (once, then
+ * cached for the request) so an existing installation upgrades itself without a
+ * manual SQL step. Nothing is dropped or rewritten: old rows keep working and
+ * `confirm_salt` stays NULL until a label is printed for that order.
+ *
+ * @return array{confirm_salt: bool, confirmed_at: bool, status_confirmed: bool}
+ */
+function order_columns_ready(): array {
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
+    $ready = ['confirm_salt' => false, 'confirmed_at' => false, 'status_confirmed' => false];
+
+    $table = db_prefix() . 'orders';
+    try {
+        $columnExists = static function (string $name) use ($table): bool {
+            $stmt = db()->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns
+                  WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?'
+            );
+            $stmt->execute([$table, $name]);
+            return (int)$stmt->fetchColumn() > 0;
+        };
+
+        $hasSalt = $columnExists('confirm_salt');
+        $hasConfirmedAt = $columnExists('confirmed_at');
+
+        if (!$hasSalt) {
+            db()->exec("ALTER TABLE `{$table}` ADD COLUMN `confirm_salt` CHAR(32) NULL DEFAULT NULL");
+            $hasSalt = true;
+        }
+        if (!$hasConfirmedAt) {
+            db()->exec("ALTER TABLE `{$table}` ADD COLUMN `confirmed_at` DATETIME NULL DEFAULT NULL");
+            $hasConfirmedAt = true;
+        }
+
+        // The original schema only allowed 4 statuses; `confirmed` was added with
+        // this feature. Widen the ENUM in place (no rows are affected).
+        $statusOk = false;
+        $column = db()->query("SHOW COLUMNS FROM `{$table}` LIKE 'status'")->fetch();
+        $type = is_array($column) ? strtolower((string)($column['Type'] ?? '')) : '';
+        if ($type === '' || str_contains($type, "'confirmed'")) {
+            $statusOk = true;
+        } else {
+            db()->exec(
+                "ALTER TABLE `{$table}`
+                    MODIFY COLUMN `status`
+                    ENUM('pending','confirmed','processing','completed','cancelled')
+                    NOT NULL DEFAULT 'pending'"
+            );
+            $statusOk = true;
+        }
+
+        $ready = [
+            'confirm_salt' => $hasSalt,
+            'confirmed_at' => $hasConfirmedAt,
+            'status_confirmed' => ($hasSalt && $hasConfirmedAt && $statusOk),
+        ];
+    } catch (Throwable $e) {
+        error_log('Mobi Boost: order confirmation columns unavailable — ' . $e->getMessage());
+    }
+    return $ready;
+}
+
 /** The id a Mongo-style filter pins the query to (null = whole collection). */
 function db_filter_id(array $filter): ?string {
     if (isset($filter['_id']) && !is_array($filter['_id'])) {
@@ -571,6 +639,7 @@ function db_load_orders(?string $id): array {
     }
 
     $docs = [];
+    $confirmReady = order_columns_ready()['confirmed_at'];
     foreach ($rows as $r) {
         $oid = (string)$r['id'];
         $doc = [
@@ -590,6 +659,9 @@ function db_load_orders(?string $id): array {
             'status' => (string)$r['status'],
             'createdAt' => db_iso_col($r['created_at']),
         ];
+        if ($confirmReady && isset($r['confirmed_at']) && $r['confirmed_at'] !== null) {
+            $doc['confirmedAt'] = db_iso_col($r['confirmed_at']);
+        }
         if ($r['updated_at'] !== null) {
             $doc['updatedAt'] = db_iso_col($r['updated_at']);
         }
@@ -804,7 +876,7 @@ function db_write_order(array $doc): void {
     $id = (string)$doc['_id'];
     $customer = (array)($doc['customer'] ?? []);
     $status = (string)($doc['status'] ?? 'pending');
-    if (!in_array($status, ['pending', 'processing', 'completed', 'cancelled'], true)) {
+    if (!in_array($status, ['pending', 'confirmed', 'processing', 'completed', 'cancelled'], true)) {
         $status = 'pending';
     }
     $coupon = $doc['couponCode'] ?? null;
@@ -1185,3 +1257,7 @@ function require_admin(): array {
 
 // ---------------------------------------------------------------- Store helpers (shared lib)
 require __DIR__ . '/lib/store.php';
+
+// ---------------------------------------------------------------- Extras (QR confirmation)
+require __DIR__ . '/lib/ratelimit.php';
+require __DIR__ . '/lib/confirm.php';
