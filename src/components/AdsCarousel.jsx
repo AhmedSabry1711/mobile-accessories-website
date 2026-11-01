@@ -74,52 +74,57 @@ export default function AdsCarousel({ ads = [] }) {
         </div>
       </div>
       <div className="ads-viewport" ref={viewportRef}>
-        <div className="ads-track" ref={trackRef} style={{ '--ads-shift': `${100 / copies}%` }}>
-          {loop.map(({ ad, copy }, index) => {
-            const media =
-              ad.type === 'video' ? (
-                <video src={ad.mediaUrl} autoPlay muted loop playsInline preload="metadata" />
-              ) : (
-                <img
-                  src={ad.mediaUrl}
-                  alt={localizeAdTitle(ad.title, lang)}
-                  loading={index < 4 ? 'eager' : 'lazy'}
-                />
+        {/* Static frame: it owns the scrollable width so the animated track's
+            transform never changes the swipe range (which would make the manual
+            scroll feel springy). */}
+        <div className="ads-track-frame">
+          <div className="ads-track" ref={trackRef} style={{ '--ads-shift': `${100 / copies}%` }}>
+            {loop.map(({ ad, copy }, index) => {
+              const media =
+                ad.type === 'video' ? (
+                  <video src={ad.mediaUrl} autoPlay muted loop playsInline preload="metadata" />
+                ) : (
+                  <img
+                    src={ad.mediaUrl}
+                    alt={localizeAdTitle(ad.title, lang)}
+                    loading={index < 4 ? 'eager' : 'lazy'}
+                  />
+                );
+
+              const inner = (
+                <figure className="ads-card ads-card-lg">
+                  <div className="ads-media ads-media-lg">{media}</div>
+                  {ad.title && (
+                    <figcaption className="ads-caption">
+                      <strong>{localizeAdTitle(ad.title, lang)}</strong>
+                      <span>{t('home.shopNow')} →</span>
+                    </figcaption>
+                  )}
+                </figure>
               );
 
-            const inner = (
-              <figure className="ads-card ads-card-lg">
-                <div className="ads-media ads-media-lg">{media}</div>
-                {ad.title && (
-                  <figcaption className="ads-caption">
-                    <strong>{localizeAdTitle(ad.title, lang)}</strong>
-                    <span>{t('home.shopNow')} →</span>
-                  </figcaption>
-                )}
-              </figure>
-            );
+              // Only the first set is real content: the extra copies are purely
+              // visual repeats, so keep them out of the tab order and a11y tree.
+              const duplicate = copy > 0;
+              const key = `${ad.id}-${copy}`;
 
-            // Only the first set is real content: the extra copies are purely
-            // visual repeats, so keep them out of the tab order and a11y tree.
-            const duplicate = copy > 0;
-            const key = `${ad.id}-${copy}`;
-
-            return ad.linkUrl ? (
-              <Link
-                key={key}
-                to={ad.linkUrl}
-                className="ads-card-link"
-                tabIndex={duplicate ? -1 : undefined}
-                aria-hidden={duplicate || undefined}
-              >
-                {inner}
-              </Link>
-            ) : (
-              <div key={key} className="ads-card-link" aria-hidden={duplicate || undefined}>
-                {inner}
-              </div>
-            );
-          })}
+              return ad.linkUrl ? (
+                <Link
+                  key={key}
+                  to={ad.linkUrl}
+                  className="ads-card-link"
+                  tabIndex={duplicate ? -1 : undefined}
+                  aria-hidden={duplicate || undefined}
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <div key={key} className="ads-card-link" aria-hidden={duplicate || undefined}>
+                  {inner}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

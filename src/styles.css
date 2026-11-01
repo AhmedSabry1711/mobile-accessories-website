@@ -3345,6 +3345,12 @@ code {
   padding: 8px 0 14px;
 }
 
+.ads-track-frame {
+  /* Owns the scrollable width so the animated track's transform cannot change
+     the swipe range while it moves. */
+  width: max-content;
+}
+
 .ads-track {
   display: flex;
   width: max-content;
@@ -3488,8 +3494,16 @@ code {
 @media (prefers-reduced-motion: reduce) {
   .ads-track {
     animation: none;
+    width: max-content;
+  }
+
+  .ads-viewport {
     overflow-x: auto;
-    width: 100%;
+    scrollbar-width: none;
+  }
+
+  .ads-viewport::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -3815,7 +3829,7 @@ button.footer-admin {
 }
 
 /* ------------------------------------------------------------------ shipping label
- * 70 × 100 mm courier label. Sizes are in mm on purpose: the same component is
+ * 70 x 100 mm courier label. Sizes are in mm on purpose: the same component is
  * shown on screen and printed, so the preview matches the paper exactly.
  * Colors are fixed (never theme variables) so dark mode cannot leak into print.
  */
@@ -4344,5 +4358,172 @@ button.footer-admin {
   .sl-pay-total {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+}
+/* ==========================================================================
+   Mobile polish (? 760px)
+   1) Compact header on scroll - logo + icons in one row, search below.
+   2) Hero perks collapse into a single compact row of four tiles.
+   3) Ads strip keeps its auto-scroll but also accepts manual horizontal swipe.
+   Desktop is untouched.
+   ========================================================================== */
+@media (max-width: 760px) {
+  /* ---------------------------------------------------------- 1) header */
+  .header-inner {
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    transition: padding 0.22s ease, gap 0.22s ease;
+  }
+
+  .brand {
+    flex-shrink: 0;
+  }
+
+  .brand-logo {
+    height: 34px;
+    transition: height 0.22s ease;
+  }
+
+  .header-actions {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .icon-link {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    transition: width 0.22s ease, height 0.22s ease;
+  }
+
+  .icon-link svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .lang-toggle {
+    width: auto;
+    padding: 0 5px;
+  }
+
+  .search {
+    order: 3;
+    width: 100%;
+    flex-basis: 100%;
+    transition: padding 0.22s ease;
+  }
+
+  /* Scrolled state: everything shrinks one notch, results in a slim bar. */
+  .header-compact {
+    box-shadow: 0 8px 20px -16px rgba(15, 23, 42, 0.5);
+  }
+
+  .header-compact .header-inner {
+    padding-top: 5px;
+    padding-bottom: 6px;
+    gap: 5px;
+  }
+
+  .header-compact .brand-logo {
+    height: 26px;
+  }
+
+  .header-compact .icon-link {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-compact .icon-link svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .header-compact .search {
+    padding: 2px 4px 2px 12px;
+  }
+
+  .header-compact .search input {
+    font-size: 0.84rem;
+  }
+
+  .header-compact .search .btn-sm {
+    padding: 4px 11px;
+    font-size: 0.75rem;
+  }
+
+  .header-compact .count-badge {
+    top: 0;
+    min-width: 14px;
+    height: 14px;
+    font-size: 0.58rem;
+  }
+
+  /* ---------------------------------------------------------- 2) perks */
+  .hero-perks {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .perk {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+    padding: 9px 4px;
+    border-radius: 12px;
+  }
+
+  .perk:hover {
+    transform: none;
+  }
+
+  .perk-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    box-shadow: 0 6px 12px -8px rgba(37, 99, 235, 0.85);
+  }
+
+  .perk-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .perk div {
+    align-items: center;
+  }
+
+  .perk strong {
+    font-size: clamp(0.64rem, 2.4vw, 0.8rem);
+    line-height: 1.15;
+  }
+
+  /* The secondary line would wrap into 2-3 lines and make the row tall. */
+  .perk div span {
+    display: none;
+  }
+
+  /* ------------------------------------------------------ 3) ads swipe */
+  .ads-viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    overflow-anchor: none;
+  }
+
+  .ads-viewport::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Keep the swipe lane available when the visitor prefers reduced motion. */
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .ads-track {
+    animation: none;
+    width: max-content;
   }
 }

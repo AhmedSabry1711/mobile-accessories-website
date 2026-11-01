@@ -23,6 +23,28 @@ export default function Header() {
   const [settings, setSettings] = useState(null);
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [compact, setCompact] = useState(false);
+
+  // Shrink the mobile header once the page is scrolled: the logo and the action
+  // icons share one compact row and the search bar sits directly underneath.
+  // Hysteresis (shrink at 40px, restore under 10px) stops the height change
+  // from flickering around a single threshold.
+  useEffect(() => {
+    let isCompact = window.scrollY > 40;
+    setCompact(isCompact);
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (!isCompact && y > 40) {
+        isCompact = true;
+        setCompact(true);
+      } else if (isCompact && y < 10) {
+        isCompact = false;
+        setCompact(false);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Reload store settings on every navigation, and whenever the admin saves new
   // ones, so categories added in the panel show up in the nav bar right away.
@@ -57,7 +79,7 @@ export default function Header() {
   };
 
   return (
-    <header className="header">
+    <header className={`header${compact ? ' header-compact' : ''}`}>
       <div className="container header-inner">
         <Link to="/" className="brand" onClick={() => setMenuOpen(false)}>
           <BrandLogo />
