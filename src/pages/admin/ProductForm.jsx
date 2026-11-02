@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, money } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
@@ -36,6 +36,15 @@ export default function ProductForm() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(isEdit);
+  const errorSummaryRef = useRef(null);
+
+  // Whenever validation fails, bring the summary into view so the reason for
+  // the server's "Validation failed" is never hidden below the fold.
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      errorSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [errors]);
 
   useEffect(() => {
     api
@@ -84,7 +93,114 @@ export default function ProductForm() {
     return price - cost;
   }, [form.price, form.costPrice]);
 
+  // Every field error, in the order they were produced.
+  const errorList = useMemo(() => Object.entries(errors), [errors]);
+
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const variantModelName = (index) =>
+    variants[index]?.model?.trim() || t('admin.productForm.modelNumber', { n: index + 1 });
+
+  /** Turn a server error key (e.g. variants[0].colors[1]) into a friendly message. */
+  const describeError = (key, raw) => {
+    const color = /^variants\[(\d+)\]\.colors\[(\d+)\]$/.exec(key);
+    if (color) {
+      return t('admin.productForm.errColor', {
+        model: variantModelName(Number(color[1])),
+        n: Number(color[2]) + 1,
+      });
+    }
+    const colors = /^variants\[(\d+)\]\.colors$/.exec(key);
+    if (colors) {
+      return t('admin.productForm.errColorRow', { model: variantModelName(Number(colors[1])) });
+    }
+    const model = /^variants\[(\d+)\]$/.exec(key);
+    if (model) {
+      return t('admin.productForm.errModel', { n: Number(model[1]) + 1 });
+    }
+
+    const known = {
+      name: 'errName',
+      category: 'errCategory',
+      description: 'errDescription',
+      price: 'errPrice',
+      costPrice: 'errCost',
+      compareAtPrice: 'errCompare',
+      images: 'errImages',
+      variants: 'errVariantEmpty',
+    };
+    return known[key]
+      ? t(`admin.productForm.${known[key]}`)
+      : raw || t('admin.productForm.errGeneric');
+  };
+
+  /** Client-side mirror of the server rules, with messages in the current language. */
+  const validate = () => {
+    const found = {};
+
+    const name = form.name.trim();
+    if (name.length < 2 || name.length > 120) {
+      found.name = t('admin.productForm.errName');
+    }
+    const category = form.category.trim();
+    if (category.length < 2 || category.length > 60) {
+      found.category = t('admin.productForm.errCategory');
+    }
+    const description = form.description.trim();
+    if (description.length < 10) {
+      found.description = t('admin.productForm.errDescription');
+    } else if (description.length > 5000) {
+      found.description = t('admin.productForm.errDescriptionLong');
+    }
+
+    const price = parseFloat(form.price);
+    const validPrice = Number.isFinite(price) && price > 0;
+    if (!validPrice) {
+      found.price = t('admin.productForm.errPrice');
+    }
+
+    const cost = form.costPrice === '' ? 0 : parseFloat(form.costPrice);
+    if (!Number.isFinite(cost) || cost < 0) {
+      found.costPrice = t('admin.productForm.errCost');
+    }
+
+    const compare = form.compareAtPrice === '' ? 0 : parseFloat(form.compareAtPrice);
+    if (!Number.isFinite(compare) || compare < 0 || (compare > 0 && validPrice && compare <= price)) {
+      found.compareAtPrice = t('admin.productForm.errCompare');
+    }
+
+    if (form.images.length < 1) {
+      found.images = t('admin.productForm.errImages');
+    } else if (form.images.length > 10) {
+      found.images = t('admin.productForm.errImagesMax');
+    }
+
+    if (useVariants) {
+      if (variants.length === 0) {
+        found.variants = t('admin.productForm.errVariantEmpty');
+      }
+      variants.forEach((variant, vi) => {
+        if (!variant.model.trim()) {
+          found[`variants[${vi}]`] = t('admin.productForm.errModel', { n: vi + 1 });
+        }
+        if (!variant.colors.length) {
+          found[`variants[${vi}].colors`] = t('admin.productForm.errColorRow', {
+            model: variantModelName(vi),
+          });
+        }
+        variant.colors.forEach((color, ci) => {
+          if (!color.name.trim()) {
+            found[`variants[${vi}].colors[${ci}]`] = t('admin.productForm.errColor', {
+              model: variantModelName(vi),
+              n: ci + 1,
+            });
+          }
+        });
+      });
+    }
+
+    return found;
+  };
 
   const uploadFile = async (file) => {
     if (!file) return;
@@ -160,6 +276,17 @@ export default function ProductForm() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (saving || uploading) return;
+
+    // Check locally first: the server's 422 arrives as a bare
+    // "Validation failed", which is useless without the field name.
+    const clientErrors = validate();
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      toast(t('admin.productForm.fixErrors'), 'error');
+      return;
+    }
+
     setSaving(true);
     setErrors({});
 
@@ -196,8 +323,21 @@ export default function ProductForm() {
       }
       navigate('/admin/panel/products');
     } catch (error) {
-      if (error.data?.errors) setErrors(error.data.errors);
-      toast(error.message, 'error');
+      const serverErrors = error.data?.errors;
+      if (serverErrors && typeof serverErrors === 'object') {
+        const localized = {};
+        for (const [key, raw] of Object.entries(serverErrors)) {
+          localized[key] = describeError(key, raw);
+        }
+        // The general variant message only repeats the per-field ones.
+        if (Object.keys(localized).some((key) => key.startsWith('variants['))) {
+          delete localized.variants;
+        }
+        setErrors(localized);
+        toast(t('admin.productForm.fixErrors'), 'error');
+      } else {
+        toast(error.message, 'error');
+      }
     } finally {
       setSaving(false);
     }
@@ -224,6 +364,17 @@ export default function ProductForm() {
       </div>
 
       <form className="panel product-form" onSubmit={submit}>
+        {errorList.length > 0 && (
+          <div className="form-alert" role="alert" ref={errorSummaryRef}>
+            <strong>{t('admin.productForm.fixErrors')}</strong>
+            <ul>
+              {errorList.map(([key, message]) => (
+                <li key={key}>{message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="form-grid">
           <div className="form-group span-2">
             <label htmlFor="pf-name">{t('admin.productForm.name')}</label>
@@ -388,6 +539,8 @@ export default function ProductForm() {
                 <div key={vIndex} className="variant-editor">
                   <div className="variant-editor-head">
                     <input
+                      className={errors[`variants[${vIndex}]`] ? 'is-invalid' : undefined}
+                      aria-invalid={errors[`variants[${vIndex}]`] ? true : undefined}
                       placeholder={t('admin.productForm.modelPlaceholder')}
                       value={variant.model}
                       onChange={(e) => updateVariant(vIndex, 'model', e.target.value)}
@@ -401,10 +554,14 @@ export default function ProductForm() {
                       <IconTrash size={16} />
                     </button>
                   </div>
+                  {errors[`variants[${vIndex}]`] && (
+                    <span className="field-error">{errors[`variants[${vIndex}]`]}</span>
+                  )}
 
                   <div className="color-rows">
                     {variant.colors.map((color, cIndex) => (
-                      <div key={cIndex} className="color-row">
+                      <Fragment key={cIndex}>
+                      <div className="color-row">
                         <input
                           type="color"
                           value={color.hex}
@@ -412,6 +569,12 @@ export default function ProductForm() {
                           title={t('admin.productForm.colorTitle')}
                         />
                         <input
+                          className={
+                            errors[`variants[${vIndex}].colors[${cIndex}]`] ? 'is-invalid' : undefined
+                          }
+                          aria-invalid={
+                            errors[`variants[${vIndex}].colors[${cIndex}]`] ? true : undefined
+                          }
                           placeholder={t('admin.productForm.colorName')}
                           value={color.name}
                           onChange={(e) => updateColor(vIndex, cIndex, 'name', e.target.value)}
@@ -461,7 +624,16 @@ export default function ProductForm() {
                           <IconTrash size={15} />
                         </button>
                       </div>
+                      {errors[`variants[${vIndex}].colors[${cIndex}]`] && (
+                        <span className="field-error">
+                          {errors[`variants[${vIndex}].colors[${cIndex}]`]}
+                        </span>
+                      )}
+                      </Fragment>
                     ))}
+                    {errors[`variants[${vIndex}].colors`] && (
+                      <span className="field-error">{errors[`variants[${vIndex}].colors`]}</span>
+                    )}
                     <button type="button" className="link-btn" onClick={() => addColor(vIndex)}>
                       <IconPlus size={15} /> {t('admin.productForm.addColor')}
                     </button>
@@ -471,6 +643,7 @@ export default function ProductForm() {
               <button type="button" className="btn btn-outline btn-sm" onClick={addVariant}>
                 <IconPlus size={16} /> {t('admin.productForm.addModel')}
               </button>
+              {errors.variants && <span className="field-error">{errors.variants}</span>}
             </div>
           )}
         </section>
