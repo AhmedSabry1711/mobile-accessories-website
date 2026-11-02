@@ -1,7 +1,16 @@
 <?php
 /**
  * Mobi Boost — API configuration.
- * Edit these values for production (or use environment variables).
+ *
+ * This file is tracked in Git, so never write real credentials into it.
+ * Keep the defaults below for local development and supply the production
+ * values through server environment variables (cPanel/hPanel → Environment
+ * Variables or a .htaccess SetEnv block):
+ *
+ *   MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, MYSQL_TABLE_PREFIX
+ *   JWT_SECRET   — long random string, MUST be changed in production
+ *   APP_URL      — e.g. https://mobiboost.store (no trailing slash)
+ *   CORS_ORIGIN  — e.g. https://mobiboost.store
  */
 declare(strict_types=1);
 
@@ -14,16 +23,21 @@ return [
     'dbName' => getenv('MONGO_DB') ?: 'mobi_boost',
 
     // MySQL connection — this is the live storage layer (see api-mysql/README.md).
+    // Production credentials come from the MYSQL_* environment variables; the
+    // fallbacks are the local XAMPP defaults only.
     'mysql' => [
         'host' => getenv('MYSQL_HOST') ?: 'localhost',
         'port' => (int)(getenv('MYSQL_PORT') ?: 3306),
         'database' => getenv('MYSQL_DATABASE') ?: 'mobi_boost',
         'username' => getenv('MYSQL_USER') ?: 'root',
+        // Never commit a real password here — set MYSQL_PASSWORD on the server.
         'password' => getenv('MYSQL_PASSWORD') ?: '',
         'tablePrefix' => getenv('MYSQL_TABLE_PREFIX') ?: 'mb_',
     ],
 
-    // Secret used to sign admin tokens — replace with a long random string
+    // Secret used to sign admin tokens and order-confirmation links.
+    // MUST be overridden with a long random value in production: the default
+    // below is public, so leaving it allows forged admin sessions.
     'jwtSecret' => getenv('JWT_SECRET') ?: 'REPLACE_WITH_A_LONG_RANDOM_SECRET_STRING',
 
     // Shop identity

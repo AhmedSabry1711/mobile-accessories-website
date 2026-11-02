@@ -6,15 +6,20 @@ import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
 
 export default function Checkout() {
-  const { cart, clearCart, toast } = useStore();
+  const { cart, clearCart, toast, coupon, applyCoupon, removeCoupon } = useStore();
   const { t, lang } = useUI();
   const navigate = useNavigate();
 
   const [calculation, setCalculation] = useState(null);
-  const [couponCode, setCouponCode] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
   const [form, setForm] = useState({ name: '', phone: '', address: '' });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
+
+  // The coupon is shared with the cart (and persisted), so a discount applied
+  // there is still honoured here instead of being lost on navigation.
+  const couponCode = coupon?.code || '';
 
   useEffect(() => {
     if (!cart.length) return;
@@ -35,6 +40,34 @@ export default function Checkout() {
       active = false;
     };
   }, [cart, couponCode, toast]);
+
+  const applyCouponCode = async (event) => {
+    event.preventDefault();
+    setCouponError('');
+    if (!couponInput.trim()) return;
+    try {
+      const result = await api.post('/api/coupons.php', {
+        code: couponInput.trim(),
+        subtotal: calculation?.subtotal || 0,
+      });
+      applyCoupon(result);
+      setCouponInput('');
+      toast(t('cart.couponApplied', { code: result.code }), 'success');
+    } catch (error) {
+      setCouponError(error.message);
+    }
+  };
+
+  const removeAppliedCoupon = () => {
+    removeCoupon();
+    setCouponInput('');
+    setCouponError('');
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.couponCode;
+      return next;
+    });
+  };
 
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -145,12 +178,31 @@ export default function Checkout() {
 
           <div className="form-group">
             <label htmlFor="co-coupon">{t('checkout.fields.coupon')}</label>
-            <input
-              id="co-coupon"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              placeholder={t('checkout.fields.couponPlaceholder')}
-            />
+            {coupon ? (
+              <div className="coupon-row">
+                <input id="co-coupon" value={coupon.code} readOnly />
+                <button type="button" className="btn btn-outline btn-sm" onClick={removeAppliedCoupon}>
+                  {t('cart.remove')}
+                </button>
+              </div>
+            ) : (
+              <div className="coupon-row">
+                <input
+                  id="co-coupon"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  placeholder={t('checkout.fields.couponPlaceholder')}
+                />
+                <button type="button" className="btn btn-dark btn-sm" onClick={applyCouponCode}>
+                  {t('cart.apply')}
+                </button>
+              </div>
+            )}
+            {couponError && <span className="field-error">{couponError}</span>}
+            {errors.couponCode && <span className="field-error">{errors.couponCode}</span>}
+            {!errors.couponCode && calculation?.couponError && (
+              <span className="field-error">{calculation.couponError}</span>
+            )}
           </div>
 
           <button className="btn btn-primary btn-lg btn-block btn-pulse" type="submit" disabled={placing || hasStockIssue}>

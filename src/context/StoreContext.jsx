@@ -25,6 +25,7 @@ const cartKey = (item) => `${item.productId}|${item.model || ''}|${item.color ||
 export function StoreProvider({ children }) {
   const { t } = useUI();
   const [cart, setCart] = useState(() => load('mb_cart', []));
+  const [coupon, setCoupon] = useState(() => load('mb_coupon', null));
   const [wishlist, setWishlist] = useState(() => load('mb_wishlist', []));
   const [admin, setAdmin] = useState(() => {
     const token = localStorage.getItem('mb_admin_token');
@@ -33,6 +34,7 @@ export function StoreProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => save('mb_cart', cart), [cart]);
+  useEffect(() => save('mb_coupon', coupon), [coupon]);
   useEffect(() => save('mb_wishlist', wishlist), [wishlist]);
 
   const toast = useCallback((message, type = 'info') => {
@@ -71,7 +73,17 @@ export function StoreProvider({ children }) {
     setCart((prev) => prev.filter((c) => cartKey(c) !== key));
   }, []);
 
-  const clearCart = useCallback(() => setCart([]), []);
+  const clearCart = useCallback(() => {
+    setCart([]);
+    // A finished order (or an emptied cart) must not carry its coupon over to
+    // the next purchase.
+    setCoupon(null);
+  }, []);
+
+  // The applied coupon lives here, not in a page, so it survives the jump from
+  // the cart to the checkout instead of being silently dropped.
+  const applyCoupon = useCallback((next) => setCoupon(next || null), []);
+  const removeCoupon = useCallback(() => setCoupon(null), []);
 
   const cartCount = useMemo(() => cart.reduce((sum, c) => sum + c.qty, 0), [cart]);
 
@@ -110,6 +122,9 @@ export function StoreProvider({ children }) {
     removeFromCart,
     clearCart,
     cartCount,
+    coupon,
+    applyCoupon,
+    removeCoupon,
     wishlist,
     toggleWishlist,
     admin,

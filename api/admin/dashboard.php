@@ -14,14 +14,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_admin();
 
-// Revenue & profit from all non-cancelled orders
+// Revenue & profit from all non-cancelled orders.
+//
+// Two rules keep the numbers honest:
+//   • profit is earned on the goods, net of the coupon the shopper used;
+//   • the shipping fee is money collected on behalf of the courier, so it is
+//     reported separately instead of being counted as profit.
+// Each line's revenue is scaled by the order's discount ratio, so the top
+// products table adds up to the store total.
 $orders = mongo_find('orders', ['status' => ['$ne' => 'cancelled']], [
     'sort' => ['createdAt' => -1],
     'limit' => 500,
 ]);
 
-$revenue = 0.0;
+$revenue = 0.0;      // goods only, after discounts
 $cost = 0.0;
+$discountTotal = 0.0;
+$shippingCollected = 0.0;
 $completed = 0;
 $pending = 0;
 $confirmed = 0;
@@ -39,10 +48,22 @@ foreach ($orders as $order) {
     } elseif ($status === 'processing') {
         $processing++;
     }
-    $revenue += (float)$order['total'];
+
+    $subtotal = (float)($order['subtotal'] ?? 0);
+    $discount = min((float)($order['discount'] ?? 0), $subtotal);
+    $paidForGoods = max(0.0, $subtotal - $discount);
+    $discountTotal += $discount;
+    $shippingCollected += (float)($order['shippingFee'] ?? 0);
+    $revenue += $paidForGoods;
+
+    // Coupons apply to the whole order, so spread the reduction across the
+    // lines proportionally to their price.
+    $ratio = $subtotal > 0 ? $paidForGoods / $subtotal : 0.0;
+
     foreach ((array)$order['items'] as $item) {
-        $lineCost = (float)$item['costPrice'] * (int)$item['qty'];
-        $lineRevenue = (float)$item['price'] * (int)$item['qty'];
+        $qty = (int)($item['qty'] ?? 0);
+        $lineCost = (float)($item['costPrice'] ?? 0) * $qty;
+        $lineRevenue = (float)($item['price'] ?? 0) * $qty * $ratio;
         $cost += $lineCost;
         $pid = (string)$item['productId'];
         if (!isset($productStats[$pid])) {
@@ -54,7 +75,7 @@ foreach ($orders as $order) {
                 'cost' => 0.0,
             ];
         }
-        $productStats[$pid]['sold'] += (int)$item['qty'];
+        $productStats[$pid]['sold'] += $qty;
         $productStats[$pid]['revenue'] += $lineRevenue;
         $productStats[$pid]['cost'] += $lineCost;
     }
@@ -95,6 +116,9 @@ ok([
     'revenue' => round($revenue, 2),
     'profit' => round($profit, 2),
     'cost' => round($cost, 2),
+    'discountTotal' => round($discountTotal, 2),
+    'shippingCollected' => round($shippingCollected, 2),
+    'collectedTotal' => round($revenue + $shippingCollected, 2),
     'ordersCount' => count($orders),
     'completedCount' => $completed,
     'pendingCount' => $pending,

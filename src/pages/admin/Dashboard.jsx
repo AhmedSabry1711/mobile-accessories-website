@@ -86,6 +86,18 @@ export default function Dashboard() {
           <strong>{money(stats.cost)}</strong>
         </div>
         <div className="mini-stat">
+          <span>{t('admin.dashboard.discountsTotal')}</span>
+          <strong>{money(stats.discountTotal ?? 0)}</strong>
+        </div>
+        <div className="mini-stat">
+          <span>{t('admin.dashboard.shippingCollected')}</span>
+          <strong>{money(stats.shippingCollected ?? 0)}</strong>
+        </div>
+        <div className="mini-stat">
+          <span>{t('admin.dashboard.collectedTotal')}</span>
+          <strong>{money(stats.collectedTotal ?? 0)}</strong>
+        </div>
+        <div className="mini-stat">
           <span>{t('admin.dashboard.lowStock')}</span>
           <strong>{stats.lowStockCount}</strong>
         </div>

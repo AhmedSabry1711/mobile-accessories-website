@@ -88,6 +88,12 @@ export default function ShippingLabel({ order, settings, confirmUrl, onClose }) 
   const status = order.status || 'pending';
   const statusLabel = t(`admin.status.${status}`) || status;
 
+  // The courier collects `order.total`, so the label spells out how that number
+  // was reached whenever a coupon changed it.
+  const subtotal = Number(order.subtotal || 0);
+  const discount = Number(order.discount || 0);
+  const shippingFee = Number(order.shippingFee || 0);
+
   return createPortal(
     <div
       className="label-portal"
@@ -191,14 +197,35 @@ export default function ShippingLabel({ order, settings, confirmUrl, onClose }) 
               {symbol && <span className="sl-currency">{symbol}</span>}
             </div>
 
-            {Number(order.shippingFee) > 0 && (
+            {discount > 0 && (
               <div className="sl-pay-row">
-                <span>{t('admin.orders.label.shippingFee')}</span>
+                <span>{t('admin.orders.label.subtotal')}</span>
                 <span className="sl-ltr" dir="ltr">
-                  {money(order.shippingFee)} {symbol}
+                  {money(subtotal)} {symbol}
                 </span>
               </div>
             )}
+
+            {discount > 0 && (
+              <div className="sl-pay-row sl-row-discount">
+                <span>
+                  {t('admin.orders.label.discount')}
+                  {order.couponCode ? ` (${order.couponCode})` : ''}
+                </span>
+                <span className="sl-ltr" dir="ltr">
+                  −{money(discount)} {symbol}
+                </span>
+              </div>
+            )}
+
+            <div className="sl-pay-row">
+              <span>{t('admin.orders.label.shippingFee')}</span>
+              <span className="sl-ltr" dir="ltr">
+                {shippingFee > 0
+                  ? `${money(shippingFee)} ${symbol}`
+                  : t('admin.orders.label.free')}
+              </span>
+            </div>
 
             <div className="sl-pay-row">
               <span>{t('admin.orders.label.paymentMethod')}</span>

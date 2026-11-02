@@ -61,6 +61,12 @@ if ($errors) {
 // Server-side price/stock/coupon/shipping validation
 $cart = build_cart($rawItems, $couponCode);
 
+// The shopper typed a code, so never place the order at full price silently:
+// reject it and let the checkout show the reason.
+if ($couponCode !== null && $cart['coupon'] === null && $cart['couponError'] !== null) {
+    fail('Coupon could not be applied', 422, ['couponCode' => $cart['couponError']]);
+}
+
 if (empty($cart['items'])) {
     fail('Your cart could not be validated', 422, ['items' => implode('; ', $cart['warnings'])]);
 }

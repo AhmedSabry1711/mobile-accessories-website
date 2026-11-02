@@ -7,20 +7,23 @@ import { localizeColor, localizeName } from '../i18n/catalog.js';
 import { IconTrash, IconMinus, IconPlus, IconTruck } from '../components/icons.jsx';
 
 export default function Cart() {
-  const { cart, updateCartQty, removeFromCart, clearCart, toast } = useStore();
+  const {
+    cart,
+    updateCartQty,
+    removeFromCart,
+    clearCart,
+    toast,
+    coupon: appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+  } = useStore();
   const { t, lang } = useUI();
   const navigate = useNavigate();
 
   const [calculation, setCalculation] = useState(null);
-  const [settings, setSettings] = useState(null);
   const [couponInput, setCouponInput] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    api.get('/api/settings.php').then(setSettings).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!cart.length) {
@@ -47,27 +50,30 @@ export default function Cart() {
     };
   }, [cart, appliedCoupon, toast]);
 
-  const freeOver = Number(settings?.shipping?.freeOver || 0);
+  // The threshold is measured against what the shopper pays after the coupon.
+  const freeShippingRemaining = calculation
+    ? Number(calculation.freeShippingRemaining ?? 0)
+    : 0;
 
-  const applyCoupon = async (event) => {
+  const applyCouponCode = async (event) => {
     event.preventDefault();
     setCouponError('');
     if (!couponInput.trim()) return;
     try {
-      const coupon = await api.post('/api/coupons.php', {
+      const result = await api.post('/api/coupons.php', {
         code: couponInput.trim(),
         subtotal: calculation?.subtotal || 0,
       });
-      setAppliedCoupon(coupon);
-      toast(t('cart.couponApplied', { code: coupon.code }), 'success');
+      applyCoupon(result);
+      setCouponInput('');
+      toast(t('cart.couponApplied', { code: result.code }), 'success');
     } catch (error) {
-      setAppliedCoupon(null);
       setCouponError(error.message);
     }
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
+  const removeAppliedCoupon = () => {
+    removeCoupon();
     setCouponInput('');
     setCouponError('');
   };
@@ -163,7 +169,7 @@ export default function Cart() {
 
         <aside className="cart-summary">
           <h2>{t('cart.summary')}</h2>
-          <form className="coupon-row" onSubmit={applyCoupon}>
+          <form className="coupon-row" onSubmit={applyCouponCode}>
             <input
               placeholder={t('cart.couponPlaceholder')}
               value={couponInput}
@@ -171,7 +177,7 @@ export default function Cart() {
               disabled={!!appliedCoupon}
             />
             {appliedCoupon ? (
-              <button type="button" className="btn btn-outline btn-sm" onClick={removeCoupon}>
+              <button type="button" className="btn btn-outline btn-sm" onClick={removeAppliedCoupon}>
                 {t('cart.remove')}
               </button>
             ) : (
@@ -181,6 +187,9 @@ export default function Cart() {
             )}
           </form>
           {couponError && <p className="stock-out small">{couponError}</p>}
+          {!couponError && calculation?.couponError && (
+            <p className="stock-out small">{calculation.couponError}</p>
+          )}
           {appliedCoupon && (
             <p className="stock-in small">
               {appliedCoupon.code}: −
@@ -205,16 +214,15 @@ export default function Cart() {
             <span>{calculation?.shippingFee > 0 ? money(calculation.shippingFee) : t('common.free')}</span>
           </div>
 
-          {freeOver > 0 &&
-            (calculation?.subtotal || 0) < freeOver &&
-            (calculation?.shippingFee || 0) > 0 && (
-              <p className="shipping-hint">
-                <IconTruck size={15} />{' '}
-                {t('cart.freeShippingHint', {
-                  amount: money(freeOver - (calculation?.subtotal || 0)),
-                })}
-              </p>
-            )}
+          {calculation &&
+            calculation.shippingEnabled !== false &&
+            !calculation.freeShipping &&
+            freeShippingRemaining > 0 && (
+            <p className="shipping-hint">
+              <IconTruck size={15} />{' '}
+              {t('cart.freeShippingHint', { amount: money(freeShippingRemaining) })}
+            </p>
+          )}
 
           <div className="summary-row total">
             <span>{t('cart.total')}</span>

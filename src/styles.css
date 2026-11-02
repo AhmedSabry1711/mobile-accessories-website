@@ -4204,6 +4204,13 @@ button.footer-admin {
   color: #0f172a;
 }
 
+/* Coupon deduction on the label: same row as the others, but tinted so the
+   courier can see why the COD amount is lower than the item prices. */
+.sl-pay-row.sl-row-discount,
+.sl-pay-row.sl-row-discount span:last-child {
+  color: #0f766e;
+}
+
 .sl-qr-wrap {
   flex: 0 0 24mm;
   width: 24mm;

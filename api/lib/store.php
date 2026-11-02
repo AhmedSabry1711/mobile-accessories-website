@@ -149,29 +149,45 @@ function build_cart(array $rawItems, ?string $couponCode): array {
     $subtotal = round($subtotal, 2);
     $coupon = null;
     $discount = 0.0;
+    // Kept separate from `warnings` so the checkout can refuse to place an
+    // order with a coupon the shopper expects to be honoured.
+    $couponError = null;
     if ($couponCode !== null && $couponCode !== '') {
         try {
             $coupon = validate_coupon($couponCode, $subtotal);
             $discount = $coupon['discount'];
         } catch (RuntimeException $e) {
-            $warnings[] = $e->getMessage();
+            $couponError = $e->getMessage();
+            $warnings[] = $couponError;
         }
     }
 
-    $discounted = max(0.0, $subtotal - $discount);
+    $discounted = max(0.0, round($subtotal - $discount, 2));
     $settings = store_settings();
     $shippingRules = $settings['shipping'];
+    // Free shipping is earned on what the shopper actually pays for the goods
+    // (i.e. after the coupon), so a discount can legitimately drop an order back
+    // under the threshold. A threshold of 0 keeps the legacy behaviour of free
+    // shipping for every order, and a disabled shipping rule never charges.
+    $shippingEnabled = !empty($shippingRules['enabled']);
+    $threshold = (float)($shippingRules['freeOver'] ?? 0);
+    $freeShipping = !$shippingEnabled || $threshold <= 0 || $discounted >= $threshold;
     $shippingFee = 0.0;
-    if (!empty($shippingRules['enabled']) && $lineItems !== [] && $discounted < (float)$shippingRules['freeOver']) {
-        $shippingFee = (float)$shippingRules['flatRate'];
+    if ($shippingEnabled && $lineItems !== [] && !$freeShipping) {
+        $shippingFee = (float)($shippingRules['flatRate'] ?? 0);
     }
 
     return [
         'items' => $lineItems,
         'subtotal' => $subtotal,
         'coupon' => $coupon,
+        'couponError' => $couponError,
         'discount' => round($discount, 2),
+        'shippingEnabled' => $shippingEnabled,
         'shippingFee' => round($shippingFee, 2),
+        'freeShipping' => $freeShipping,
+        'freeShippingThreshold' => round($threshold, 2),
+        'freeShippingRemaining' => $threshold > 0 ? round(max(0.0, $threshold - $discounted), 2) : 0.0,
         'total' => round($discounted + $shippingFee, 2),
         'warnings' => $warnings,
     ];
