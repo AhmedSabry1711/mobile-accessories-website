@@ -159,7 +159,6 @@ export default function Footer() {
               onClick={() => setGateOpen(true)}
             >
               <IconLock size={12} />
-              {t('footer.admin')}
             </button>
           </span>
         </div>

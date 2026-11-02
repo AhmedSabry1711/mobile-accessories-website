@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import WhatsAppWidget from './components/WhatsAppWidget.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import { closeGate } from './components/AdminGate.jsx';
+import RequireOwnerGate from './components/RequireOwnerGate.jsx';
 import { useStore } from './context/StoreContext.jsx';
 import Home from './pages/Home.jsx';
 import Shop from './pages/Shop.jsx';
@@ -14,17 +15,20 @@ import Checkout from './pages/Checkout.jsx';
 import OrderSuccess from './pages/OrderSuccess.jsx';
 import OrderConfirm from './pages/OrderConfirm.jsx';
 import InfoPage from './pages/InfoPage.jsx';
-import AdminLogin from './pages/admin/AdminLogin.jsx';
-import AdminLayout from './pages/admin/AdminLayout.jsx';
-import Dashboard from './pages/admin/Dashboard.jsx';
-import Products from './pages/admin/Products.jsx';
-import ProductForm from './pages/admin/ProductForm.jsx';
-import Coupons from './pages/admin/Coupons.jsx';
-import Ads from './pages/admin/Ads.jsx';
-import Orders from './pages/admin/Orders.jsx';
-import Settings from './pages/admin/Settings.jsx';
-import Reviews from './pages/admin/Reviews.jsx';
 import NotFound from './pages/NotFound.jsx';
+
+// The admin panel is a separate chunk: shoppers should not download it (or the
+// QR-code library used by the shipping label) just to browse the store.
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout.jsx'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard.jsx'));
+const Products = lazy(() => import('./pages/admin/Products.jsx'));
+const ProductForm = lazy(() => import('./pages/admin/ProductForm.jsx'));
+const Coupons = lazy(() => import('./pages/admin/Coupons.jsx'));
+const Ads = lazy(() => import('./pages/admin/Ads.jsx'));
+const Orders = lazy(() => import('./pages/admin/Orders.jsx'));
+const Settings = lazy(() => import('./pages/admin/Settings.jsx'));
+const Reviews = lazy(() => import('./pages/admin/Reviews.jsx'));
 
 export default function App() {
   const location = useLocation();
@@ -45,9 +49,10 @@ export default function App() {
         <Route path="/confirm/:code" element={<OrderConfirm />} />
 
         {/* Admin: its own chrome — no storefront header, footer or WhatsApp button.
-            The only way out of the panel is the Sign-out button. */}
-        <Route path="/admin" element={<AdminLogin />} />
-        <Route path="/admin/panel" element={<AdminLayout />}>
+            Every entry point (footer lock, bookmark, shared link) passes through
+            the owner-password gate before the login form is even rendered. */}
+        <Route path="/admin" element={<AdminArea><AdminLogin /></AdminArea>} />
+        <Route path="/admin/panel" element={<AdminArea><AdminLayout /></AdminArea>}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<Products />} />
           <Route path="products/new" element={<ProductForm />} />
@@ -76,6 +81,23 @@ export default function App() {
       </Routes>
       <ToastStack />
     </div>
+  );
+}
+
+/** Owner gate + lazy-loading fallback for the whole admin area. */
+function AdminArea({ children }) {
+  return (
+    <RequireOwnerGate>
+      <Suspense
+        fallback={
+          <div className="container loading-page">
+            <div className="spinner" />
+          </div>
+        }
+      >
+        {children}
+      </Suspense>
+    </RequireOwnerGate>
   );
 }
 

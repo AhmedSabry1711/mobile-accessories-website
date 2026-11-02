@@ -18,6 +18,11 @@ import { IconLock, IconClose } from './icons.jsx';
 const GATE_KEY = 'mb_admin_gate';
 const OWNER_PASSWORD = 'Pa$$w0rd';
 
+/** Compare an entered password with the owner password. */
+export function verifyOwnerPassword(value) {
+  return value === OWNER_PASSWORD;
+}
+
 export function isGateOpen() {
   try {
     return sessionStorage.getItem(GATE_KEY) === '1';
@@ -61,7 +66,7 @@ export default function AdminGate({ open, onClose }) {
 
   const submit = (event) => {
     event.preventDefault();
-    if (value === OWNER_PASSWORD) {
+    if (verifyOwnerPassword(value)) {
       openGate();
       onClose();
       navigate('/admin');

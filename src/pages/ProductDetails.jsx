@@ -98,19 +98,21 @@ export default function ProductDetails() {
     setQty(1);
   };
 
+  // Returns true when the line was actually added, so "Buy now" only navigates
+  // when the add succeeded (validation included).
   const addToCartHandler = () => {
-    if (!product) return;
+    if (!product) return false;
     if (hasVariants && (!selectedModel || !selectedColor)) {
       toast(t('product.toast.selectOption'), 'error');
-      return;
+      return false;
     }
     if (outOfStock) {
       toast(t('product.toast.outOfStock'), 'error');
-      return;
+      return false;
     }
     if (qty > availableStock) {
       toast(t('product.toast.onlyLeft', { n: availableStock }), 'error');
-      return;
+      return false;
     }
     addToCart({
       productId: product.id,
@@ -121,6 +123,7 @@ export default function ProductDetails() {
       color: hasVariants ? selectedColor : null,
       qty,
     });
+    return true;
   };
 
   const submitReview = async (event) => {
@@ -333,8 +336,7 @@ export default function ProductDetails() {
           <button
             className="btn btn-dark btn-block btn-pulse"
             onClick={() => {
-              addToCartHandler();
-              if (!outOfStock) navigate('/checkout');
+              if (addToCartHandler()) navigate('/checkout');
             }}
             disabled={outOfStock}
           >

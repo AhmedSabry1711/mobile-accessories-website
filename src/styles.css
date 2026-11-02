@@ -1973,6 +1973,13 @@ code {
   flex: 1;
 }
 
+/* Reassurance under the coupon field: no need to hunt for an "apply" button. */
+.coupon-hint {
+  display: block;
+  margin: -2px 0 8px;
+  line-height: 1.4;
+}
+
 .summary-row {
   display: flex;
   justify-content: space-between;
@@ -3523,11 +3530,12 @@ code {
 .footer-admin {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
+  justify-content: center;
+  padding: 4px;
   border-radius: 6px;
   color: #94a3b8;
   font-size: 0.78rem;
+  line-height: 0;
   opacity: 0.55;
   transition: opacity 0.15s ease, color 0.15s ease;
 }

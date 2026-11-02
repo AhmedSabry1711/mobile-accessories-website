@@ -4,6 +4,7 @@ import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
+import { useCouponAutoApply } from '../lib/useCouponAutoApply.js';
 import { IconTrash, IconMinus, IconPlus, IconTruck } from '../components/icons.jsx';
 
 export default function Cart() {
@@ -21,9 +22,17 @@ export default function Cart() {
   const navigate = useNavigate();
 
   const [calculation, setCalculation] = useState(null);
-  const [couponInput, setCouponInput] = useState('');
-  const [couponError, setCouponError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Validated as soon as the shopper stops typing — no "apply" tap needed.
+  const couponEntry = useCouponAutoApply({
+    subtotal: calculation?.subtotal,
+    applied: appliedCoupon,
+    applyCoupon,
+    onApplied: (result, { silent }) => {
+      if (!silent) toast(t('cart.couponApplied', { code: result.code }), 'success');
+    },
+  });
 
   useEffect(() => {
     if (!cart.length) {
@@ -55,27 +64,14 @@ export default function Cart() {
     ? Number(calculation.freeShippingRemaining ?? 0)
     : 0;
 
-  const applyCouponCode = async (event) => {
+  const applyCouponCode = (event) => {
     event.preventDefault();
-    setCouponError('');
-    if (!couponInput.trim()) return;
-    try {
-      const result = await api.post('/api/coupons.php', {
-        code: couponInput.trim(),
-        subtotal: calculation?.subtotal || 0,
-      });
-      applyCoupon(result);
-      setCouponInput('');
-      toast(t('cart.couponApplied', { code: result.code }), 'success');
-    } catch (error) {
-      setCouponError(error.message);
-    }
+    couponEntry.applyNow();
   };
 
   const removeAppliedCoupon = () => {
     removeCoupon();
-    setCouponInput('');
-    setCouponError('');
+    couponEntry.reset();
   };
 
   if (!cart.length) {
@@ -172,22 +168,29 @@ export default function Cart() {
           <form className="coupon-row" onSubmit={applyCouponCode}>
             <input
               placeholder={t('cart.couponPlaceholder')}
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+              value={appliedCoupon ? appliedCoupon.code : couponEntry.input}
+              onChange={(e) => couponEntry.change(e.target.value)}
               disabled={!!appliedCoupon}
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              aria-label={t('cart.couponPlaceholder')}
             />
             {appliedCoupon ? (
               <button type="button" className="btn btn-outline btn-sm" onClick={removeAppliedCoupon}>
                 {t('cart.remove')}
               </button>
             ) : (
-              <button type="submit" className="btn btn-dark btn-sm">
-                {t('cart.apply')}
+              <button type="submit" className="btn btn-dark btn-sm" disabled={couponEntry.checking}>
+                {couponEntry.checking ? t('cart.applying') : t('cart.apply')}
               </button>
             )}
           </form>
-          {couponError && <p className="stock-out small">{couponError}</p>}
-          {!couponError && calculation?.couponError && (
+          {!appliedCoupon && !couponEntry.error && !calculation?.couponError && (
+            <p className="muted small coupon-hint">{t('cart.couponAutoHint')}</p>
+          )}
+          {couponEntry.error && <p className="stock-out small">{couponEntry.error}</p>}
+          {!couponEntry.error && calculation?.couponError && (
             <p className="stock-out small">{calculation.couponError}</p>
           )}
           {appliedCoupon && (

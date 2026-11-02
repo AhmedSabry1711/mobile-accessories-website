@@ -4,6 +4,8 @@ import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
+import { useCouponAutoApply } from '../lib/useCouponAutoApply.js';
+import { loadCustomer, saveCustomer } from '../lib/customer.js';
 
 export default function Checkout() {
   const { cart, clearCart, toast, coupon, applyCoupon, removeCoupon } = useStore();
@@ -11,15 +13,28 @@ export default function Checkout() {
   const navigate = useNavigate();
 
   const [calculation, setCalculation] = useState(null);
-  const [couponInput, setCouponInput] = useState('');
-  const [couponError, setCouponError] = useState('');
-  const [form, setForm] = useState({ name: '', phone: '', address: '' });
+  // Prefilled with the details from the previous order on this device.
+  const [form, setForm] = useState(loadCustomer);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
 
   // The coupon is shared with the cart (and persisted), so a discount applied
   // there is still honoured here instead of being lost on navigation.
   const couponCode = coupon?.code || '';
+
+  const couponEntry = useCouponAutoApply({
+    subtotal: calculation?.subtotal,
+    applied: coupon,
+    applyCoupon,
+    onApplied: (result, { silent }) => {
+      if (!silent) toast(t('cart.couponApplied', { code: result.code }), 'success');
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.couponCode;
+        return next;
+      });
+    },
+  });
 
   useEffect(() => {
     if (!cart.length) return;
@@ -41,27 +56,22 @@ export default function Checkout() {
     };
   }, [cart, couponCode, toast]);
 
-  const applyCouponCode = async (event) => {
+  const applyCouponCode = (event) => {
     event.preventDefault();
-    setCouponError('');
-    if (!couponInput.trim()) return;
-    try {
-      const result = await api.post('/api/coupons.php', {
-        code: couponInput.trim(),
-        subtotal: calculation?.subtotal || 0,
-      });
-      applyCoupon(result);
-      setCouponInput('');
-      toast(t('cart.couponApplied', { code: result.code }), 'success');
-    } catch (error) {
-      setCouponError(error.message);
-    }
+    couponEntry.applyNow();
+  };
+
+  // Pressing Enter in the coupon field must check the code, not submit the
+  // whole checkout form (the coupon input lives inside it).
+  const onCouponKeyDown = (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    couponEntry.applyNow();
   };
 
   const removeAppliedCoupon = () => {
     removeCoupon();
-    setCouponInput('');
-    setCouponError('');
+    couponEntry.reset();
     setErrors((prev) => {
       const next = { ...prev };
       delete next.couponCode;
@@ -96,6 +106,8 @@ export default function Checkout() {
         },
         couponCode: couponCode || null,
       });
+      // Remember the delivery details for the next order on this device.
+      saveCustomer(form);
       clearCart();
       toast(t('success.title'), 'success');
       navigate(`/order-success/${order.orderNumber}`, { state: { order } });
@@ -189,16 +201,28 @@ export default function Checkout() {
               <div className="coupon-row">
                 <input
                   id="co-coupon"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  value={couponEntry.input}
+                  onChange={(e) => couponEntry.change(e.target.value)}
+                  onKeyDown={onCouponKeyDown}
                   placeholder={t('checkout.fields.couponPlaceholder')}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
                 />
-                <button type="button" className="btn btn-dark btn-sm" onClick={applyCouponCode}>
-                  {t('cart.apply')}
+                <button
+                  type="button"
+                  className="btn btn-dark btn-sm"
+                  onClick={applyCouponCode}
+                  disabled={couponEntry.checking}
+                >
+                  {couponEntry.checking ? t('cart.applying') : t('cart.apply')}
                 </button>
               </div>
             )}
-            {couponError && <span className="field-error">{couponError}</span>}
+            {!coupon && !couponEntry.error && !errors.couponCode && !calculation?.couponError && (
+              <span className="muted small coupon-hint">{t('cart.couponAutoHint')}</span>
+            )}
+            {couponEntry.error && <span className="field-error">{couponEntry.error}</span>}
             {errors.couponCode && <span className="field-error">{errors.couponCode}</span>}
             {!errors.couponCode && calculation?.couponError && (
               <span className="field-error">{calculation.couponError}</span>
