@@ -13,13 +13,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // ---- Track order ----------------------------------------------------------
 if ($method === 'GET') {
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    rate_limit('order-track:' . $ip, 60, 600);
+
     $number = trim((string)($_GET['number'] ?? ''));
     $phone = trim((string)($_GET['phone'] ?? ''));
     if ($number === '' || $phone === '') {
         fail('Order number and phone are required', 400);
     }
     $order = mongo_find_one('orders', ['orderNumber' => $number]);
-    if (!$order || preg_replace('/[^\d+]/', '', (string)$order['customer']['phone']) !== preg_replace('/[^\d+]/', '', $phone)) {
+    if (!$order || !phone_matches($order, $phone)) {
         fail('Order not found', 404);
     }
     ok(order_payload($order));
@@ -29,8 +32,65 @@ if ($method !== 'POST') {
     fail('Method not allowed', 405);
 }
 
-// ---- Place order ----------------------------------------------------------
 $data = json_input();
+
+// ---- Cancel order (customer) ----------------------------------------------
+if (($_GET['action'] ?? '') === 'cancel') {
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    rate_limit('order-cancel:' . $ip, 20, 600);
+
+    $number = trim((string)($data['orderNumber'] ?? ''));
+    $phone = trim((string)($data['phone'] ?? ''));
+    if ($number === '' || $phone === '') {
+        fail('Order number and phone are required', 400);
+    }
+
+    $order = mongo_find_one('orders', ['orderNumber' => $number]);
+    if (!$order || !phone_matches($order, $phone)) {
+        fail('Order not found', 404);
+    }
+
+    $status = (string)($order['status'] ?? '');
+    // Already cancelled: answer with the order so a double tap is harmless.
+    if ($status === 'cancelled') {
+        ok(order_payload($order));
+    }
+    // Once the order is being prepared or has been delivered, only the shop can
+    // cancel it (see api/admin/orders.php).
+    if (!in_array($status, ['pending', 'confirmed'], true)) {
+        fail(
+            'This order can no longer be cancelled',
+            409,
+            ['status' => 'Only pending or confirmed orders can be cancelled']
+        );
+    }
+
+    $oid = (string)$order['_id'];
+    $prefix = db_prefix();
+    // Conditional update: two simultaneous taps can never cancel twice, because
+    // only the first one changes a row (and therefore restores the stock).
+    $stmt = db()->prepare(
+        "UPDATE `{$prefix}orders`
+            SET `status` = 'cancelled', `updated_at` = UTC_TIMESTAMP()
+          WHERE `id` = ? AND `status` IN ('pending', 'confirmed')"
+    );
+    $stmt->execute([$oid]);
+
+    if ($stmt->rowCount() === 1) {
+        restore_stock((array)$order['items']);
+    }
+
+    $fresh = mongo_find_one('orders', ['_id' => $oid]);
+    if (!$fresh) {
+        fail('Order not found', 404);
+    }
+    if ((string)($fresh['status'] ?? '') !== 'cancelled') {
+        fail('This order can no longer be cancelled', 409);
+    }
+    ok(order_payload($fresh));
+}
+
+// ---- Place order ----------------------------------------------------------
 $rawItems = array_values((array)($data['items'] ?? []));
 $customer = (array)($data['customer'] ?? []);
 $couponCode = isset($data['couponCode']) && $data['couponCode'] !== ''
@@ -109,9 +169,13 @@ $order = mongo_insert('orders', [
 
 decrement_stock($cart['items']);
 
+// Best-effort WhatsApp alert to the owner. Fails silently: the order is already
+// saved, so a notification problem must never turn a successful sale into an error.
+notify_order_whatsapp($order);
+
 ok(order_payload($order), 201);
 
-/** Shape an order document for API output. */
+/** Shape an order document for the public API (tracking + order placement). */
 function order_payload(array $order): array {
     $order = bson_clean($order);
     $order['id'] = $order['_id'];
@@ -122,8 +186,27 @@ function order_payload(array $order): array {
     $order['total'] = (float)$order['total'];
     foreach ($order['items'] as &$item) {
         $item['price'] = (float)$item['price'];
-        $item['costPrice'] = (float)$item['costPrice'];
         $item['qty'] = (int)$item['qty'];
+        // Cost is shop-internal data: it must never reach the customer's browser.
+        unset($item['costPrice']);
     }
     return $order;
+}
+
+/**
+ * Does the phone typed by the shopper match the one stored on the order?
+ * Formatting (spaces, dashes, +) is ignored, and a country-code prefix is
+ * accepted: "+20 101 234 5678" and "01012345678" both end with the same
+ * 10-digit subscriber number.
+ */
+function phone_matches(array $order, string $phone): bool {
+    $saved = preg_replace('/\D+/', '', (string)($order['customer']['phone'] ?? ''));
+    $typed = preg_replace('/\D+/', '', $phone);
+    if ($saved === '' || $typed === '') {
+        return false;
+    }
+    if ($saved === $typed) {
+        return true;
+    }
+    return strlen($saved) >= 10 && strlen($typed) >= 10 && substr($saved, -10) === substr($typed, -10);
 }

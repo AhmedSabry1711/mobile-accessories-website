@@ -44,6 +44,22 @@ return [
     'currencySymbol' => '$',
     'currencyCode' => 'USD',
 
+    // Password that guards destructive actions in the admin panel (deleting an
+    // order). It is an extra factor on top of the admin login; override it in
+    // production with the OWNER_PASSWORD environment variable.
+    'ownerPassword' => getenv('OWNER_PASSWORD') ?: 'Pa$$w0rd',
+
+    // WhatsApp order alerts through CallMeBot.
+    // https://www.callmebot.com/blog/free-api-whatsapp-messages/
+    // Keep the real phone/api key OUT of this tracked file: set the
+    // CALLMEBOT_PHONE / CALLMEBOT_APIKEY environment variables on the server, or
+    // put them in api/config.private.php (git-ignored).
+    'whatsapp' => [
+        'enabled' => getenv('CALLMEBOT_ENABLED') !== '0',
+        'phone' => getenv('CALLMEBOT_PHONE') ?: '',
+        'apiKey' => getenv('CALLMEBOT_APIKEY') ?: '',
+    ],
+
     // Public site URL used to build the QR links printed on shipping labels.
     // Leave empty to derive it from the admin request; set it in production,
     // e.g. 'https://mobiboost.com' (no trailing slash).

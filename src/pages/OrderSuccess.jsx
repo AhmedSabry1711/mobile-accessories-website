@@ -3,7 +3,8 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { api, money } from '../api/client.js';
 import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
-import { IconTruck, IconPhone, IconShield } from '../components/icons.jsx';
+import { IconTruck, IconPhone, IconShield, IconBox } from '../components/icons.jsx';
+import { loadCustomer } from '../lib/customer.js';
 
 export default function OrderSuccess() {
   const { orderNumber } = useParams();
@@ -17,6 +18,10 @@ export default function OrderSuccess() {
   }, []);
 
   const waNumber = (settings?.whatsapp || '').replace(/[^\d]/g, '');
+  const trackPhone = order?.customer?.phone || loadCustomer().phone || '';
+  const trackLink = `/track-order?order=${encodeURIComponent(orderNumber || '')}${
+    trackPhone ? `&phone=${encodeURIComponent(trackPhone)}` : ''
+  }`;
 
   return (
     <div className="container success-page">
@@ -84,6 +89,10 @@ export default function OrderSuccess() {
         </div>
 
         <div className="success-actions">
+          <Link to={trackLink} className="btn btn-outline">
+            <IconBox size={18} />
+            {t('success.track')}
+          </Link>
           <Link to="/shop" className="btn btn-primary">
             {t('success.continue')}
           </Link>

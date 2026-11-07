@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, money } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
-import { IconSearch, IconClose, IconPrinter } from '../../components/icons.jsx';
+import { IconSearch, IconClose, IconPrinter, IconTrash } from '../../components/icons.jsx';
 import ShippingLabel from '../../components/ShippingLabel.jsx';
 
 const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'];
@@ -17,6 +17,11 @@ export default function Orders() {
   const [selected, setSelected] = useState(null);
   const [label, setLabel] = useState(null);
   const [labelLoading, setLabelLoading] = useState(null);
+  // Deleting an order is permanent, so it is guarded by the owner password.
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const load = (status = '', search = '') => {
     setLoading(true);
@@ -65,6 +70,44 @@ export default function Orders() {
       toast(t('admin.orders.changeToast', { order: order.orderNumber, status: t(`admin.status.${status}`) }), 'success');
     } catch (error) {
       toast(error.message, 'error');
+    }
+  };
+
+  const askDelete = (order) => {
+    setDeleteTarget(order);
+    setDeletePassword('');
+    setDeleteError('');
+  };
+
+  const closeDelete = () => {
+    if (deleteBusy) return;
+    setDeleteTarget(null);
+    setDeletePassword('');
+    setDeleteError('');
+  };
+
+  const confirmDelete = async (event) => {
+    event.preventDefault();
+    if (!deleteTarget) return;
+    if (!deletePassword) {
+      setDeleteError(t('admin.orders.delete.passwordRequired'));
+      return;
+    }
+    setDeleteBusy(true);
+    setDeleteError('');
+    try {
+      await api.del(`/api/admin/orders.php?id=${deleteTarget.id}`, { password: deletePassword });
+      setOrders((prev) => prev.filter((o) => o.id !== deleteTarget.id));
+      setSelected((prev) => (prev && prev.id === deleteTarget.id ? null : prev));
+      toast(t('admin.orders.delete.success', { order: deleteTarget.orderNumber }), 'success');
+      setDeleteTarget(null);
+      setDeletePassword('');
+    } catch (error) {
+      setDeleteError(
+        error.status === 403 ? t('admin.orders.delete.wrongPassword') : error.message
+      );
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -159,6 +202,14 @@ export default function Orders() {
                     >
                       <IconPrinter size={16} />
                       {t('admin.orders.label.short')}
+                    </button>
+                    <button
+                      className="icon-btn danger"
+                      onClick={() => askDelete(order)}
+                      title={t('admin.orders.delete.action')}
+                      aria-label={t('admin.orders.delete.action')}
+                    >
+                      <IconTrash size={16} />
                     </button>
                   </td>
                 </tr>
@@ -265,8 +316,72 @@ export default function Orders() {
                   {t(`admin.status.${status}`)}
                 </button>
               ))}
+              <button className="btn btn-danger btn-sm" onClick={() => askDelete(selected)}>
+                <IconTrash size={16} />
+                {t('admin.orders.delete.action')}
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={closeDelete}>
+          <form className="modal modal-sm" onSubmit={confirmDelete} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <h2>{t('admin.orders.delete.title')}</h2>
+                <p className="muted">
+                  {t('admin.orders.delete.text', { order: deleteTarget.orderNumber })}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={closeDelete}
+                aria-label={t('admin.orders.delete.cancel')}
+                disabled={deleteBusy}
+              >
+                <IconClose size={20} />
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="delete-owner-password">{t('admin.orders.delete.password')}</label>
+              <input
+                id="delete-owner-password"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                autoComplete="current-password"
+                autoFocus
+                disabled={deleteBusy}
+              />
+            </div>
+
+            {deleteError && (
+              <div className="form-alert" role="alert">
+                {deleteError}
+              </div>
+            )}
+
+            <p className="muted small">{t('admin.orders.delete.hint')}</p>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={closeDelete}
+                disabled={deleteBusy}
+              >
+                {t('admin.orders.delete.cancel')}
+              </button>
+              <button type="submit" className="btn btn-danger btn-sm" disabled={deleteBusy}>
+                <IconTrash size={16} />
+                {deleteBusy ? t('admin.orders.delete.working') : t('admin.orders.delete.confirm')}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

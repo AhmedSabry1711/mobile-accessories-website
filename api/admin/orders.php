@@ -5,6 +5,7 @@
  * GET  /api/admin/orders.php?status=&q=   list
  * GET  /api/admin/orders.php?id=          single order
  * PUT  /api/admin/orders.php?id=          update status (cancelled orders restock)
+ * DELETE /api/admin/orders.php?id=        delete permanently (owner password, restocks)
  */
 declare(strict_types=1);
 
@@ -129,16 +130,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     require_admin();
+
+    // Deleting an order is destructive and permanent, so it asks for the owner
+    // password again on top of the admin session. The value comes from
+    // api/config.php (OWNER_PASSWORD env) and never reaches the browser.
+    global $CONFIG;
+    $data = json_input();
+    $password = (string)($data['password'] ?? '');
+    $expected = (string)($CONFIG['ownerPassword'] ?? '');
+    if ($expected === '' || !hash_equals($expected, $password)) {
+        fail('Owner password is incorrect', 403, ['password' => 'owner_password_invalid']);
+    }
+
     $id = $_GET['id'] ?? '';
     $oid = object_id((string)$id);
     if (!$oid) {
         fail('Invalid order id', 400);
     }
-    $deleted = mongo_delete('orders', ['_id' => $oid]);
-    if (!$deleted) {
+
+    $order = mongo_find_one('orders', ['_id' => $oid]);
+    if (!$order) {
         fail('Order not found', 404);
     }
-    ok(['deleted' => true]);
+
+    // A cancelled order already returned its stock — restore only once.
+    $status = (string)($order['status'] ?? 'pending');
+    if ($status !== 'cancelled') {
+        restore_stock((array)($order['items'] ?? []));
+    }
+
+    mongo_delete('orders', ['_id' => $oid]);
+    ok([
+        'deleted' => true,
+        'orderNumber' => (string)($order['orderNumber'] ?? ''),
+        'stockRestored' => $status !== 'cancelled',
+    ]);
 }
 
 fail('Method not allowed', 405);

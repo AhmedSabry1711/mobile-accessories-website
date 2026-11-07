@@ -118,31 +118,10 @@ export default function Footer() {
           </h4>
           <Link to="/cart">{t('footer.links.yourCart')}</Link>
           <Link to="/checkout">{t('footer.links.checkout')}</Link>
+          <Link to="/track-order">{t('footer.links.trackOrder')}</Link>
           <Link to="/shipping">{t('footer.links.shipping')}</Link>
           <Link to="/returns">{t('footer.links.returns')}</Link>
           <Link to="/contact">{t('footer.links.contact')}</Link>
-        </div>
-
-        <div className="footer-col footer-newsletter">
-          <h4>{t('footer.newsletter')}</h4>
-          <p>{t('footer.newsletterText')}</p>
-          <form
-            className="newsletter"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const email = e.target.email.value;
-              if (email) {
-                window.location.assign(
-                  `mailto:sales@mobiboost.com?subject=Newsletter%20signup&body=Please%20add%20${encodeURIComponent(email)}%20to%20the%20Mobi%20Boost%20list.`
-                );
-              }
-            }}
-          >
-            <input type="email" name="email" placeholder={t('footer.newsletterPlaceholder')} required />
-            <button type="submit" className="btn btn-primary btn-sm">
-              {t('footer.join')}
-            </button>
-          </form>
         </div>
       </div>
 

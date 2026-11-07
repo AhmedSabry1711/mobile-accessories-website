@@ -4,10 +4,14 @@ import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
+import { loadCustomer } from '../lib/customer.js';
 import { IconBox, IconTruck, IconClose, IconWhatsApp } from '../components/icons.jsx';
 
 /** Happy-path statuses, in the order they happen. */
-const FLOW = ['pending', 'processing', 'completed'];
+const FLOW = ['pending', 'confirmed', 'processing', 'completed'];
+
+/** Orders the shopper can still cancel on their own (before preparation starts). */
+const CANCELLABLE = ['pending', 'confirmed'];
 
 const WHATSAPP = 'https://wa.me/201023538775';
 
@@ -16,15 +20,16 @@ const WHATSAPP = 'https://wa.me/201023538775';
  *
  * The order is looked up with the order number + the phone used at checkout
  * (the API never exposes an order to someone who knows only the number).
- * While the order is still `pending` the customer can cancel it themselves.
+ * While the order is still pending or confirmed the customer can cancel it
+ * themselves; once preparation starts only the shop can cancel it.
  */
 export default function TrackOrder() {
   const [params, setParams] = useSearchParams();
-  const { t, lang } = useUI();
+  const { t, lang, locale } = useUI();
   const { toast } = useStore();
 
   const [orderNumber, setOrderNumber] = useState(params.get('order') || '');
-  const [phone, setPhone] = useState(params.get('phone') || '');
+  const [phone, setPhone] = useState(params.get('phone') || loadCustomer().phone);
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -100,7 +105,14 @@ export default function TrackOrder() {
   const status = order?.status || '';
   const cancelled = status === 'cancelled';
   const stepIndex = FLOW.indexOf(status);
-  const canCancel = status === 'pending';
+  const canCancel = CANCELLABLE.includes(status);
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  };
 
   return (
     <div className="container track-page">
@@ -155,6 +167,21 @@ export default function TrackOrder() {
               <span className={`status status-${status}`}>{t(`track.status_${status}`)}</span>
             </div>
 
+            <div className="track-dates">
+              {order.createdAt && (
+                <div className="track-date">
+                  <span className="track-label">{t('track.placedAt')}</span>
+                  <strong>{formatDate(order.createdAt)}</strong>
+                </div>
+              )}
+              {order.updatedAt && (
+                <div className="track-date">
+                  <span className="track-label">{t('track.updatedAt')}</span>
+                  <strong>{formatDate(order.updatedAt)}</strong>
+                </div>
+              )}
+            </div>
+
             {cancelled ? (
               <p className="track-note track-note-cancelled">{t('track.cancelledNote')}</p>
             ) : (
@@ -176,9 +203,11 @@ export default function TrackOrder() {
               <p className="track-note">
                 {status === 'pending'
                   ? t('track.notePending')
-                  : status === 'processing'
-                    ? t('track.noteProcessing')
-                    : t('track.noteCompleted')}
+                  : status === 'confirmed'
+                    ? t('track.noteConfirmed')
+                    : status === 'processing'
+                      ? t('track.noteProcessing')
+                      : t('track.noteCompleted')}
               </p>
             )}
 

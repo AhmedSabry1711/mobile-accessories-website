@@ -156,6 +156,9 @@ export default function Header() {
           <Link to="/shop?filter=sale" className="sale-link" onClick={() => setMenuOpen(false)}>
             {t('header.saleLink')}
           </Link>
+          <Link to="/track-order" className="track-link" onClick={() => setMenuOpen(false)}>
+            {t('header.trackOrder')}
+          </Link>
         </div>
       </nav>
     </header>

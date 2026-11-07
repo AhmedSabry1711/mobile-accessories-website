@@ -2254,7 +2254,7 @@ code {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+  grid-template-columns: 1.7fr 1fr 1fr;
   gap: 34px;
   padding: 50px 20px 34px;
 }
@@ -2385,31 +2385,6 @@ code {
 
 .footer-col a:hover {
   color: #fff;
-}
-
-.footer-newsletter p {
-  font-size: 0.85rem;
-}
-
-.newsletter {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.newsletter input {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: #fff;
-  outline: none;
-  min-width: 0;
-}
-
-.newsletter input:focus {
-  border-color: var(--primary);
 }
 
 .footer-bottom {
@@ -4578,4 +4553,558 @@ button.footer-admin {
     animation: none;
     width: max-content;
   }
+}
+
+/* ==========================================================================
+   Track order — lookup, status timeline, items and customer self-cancel
+   ========================================================================== */
+.track-link {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.track-page {
+  padding: 40px 20px 70px;
+}
+
+.track-card {
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.track-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.track-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.track-head h1 {
+  margin: 0 0 4px;
+  font-size: 1.55rem;
+}
+
+.track-intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.track-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.track-form .form-group {
+  margin-bottom: 0;
+}
+
+.track-form .btn {
+  min-height: 44px;
+}
+
+.track-error {
+  margin: 16px 0 0;
+  padding: 11px 14px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.track-result {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.track-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.track-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.track-number {
+  font-size: 1.15rem;
+}
+
+.track-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  margin-top: 12px;
+}
+
+.track-date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.track-date strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Status timeline */
+.track-steps {
+  display: flex;
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+}
+
+.track-step {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.track-step::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  inset-inline-start: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line);
+}
+
+.track-step:first-child::before {
+  display: none;
+}
+
+.track-dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+}
+
+.track-step.is-done,
+.track-step.is-current {
+  color: var(--ink);
+}
+
+.track-step.is-done .track-dot,
+.track-step.is-current .track-dot {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.track-step.is-done::before,
+.track-step.is-current::before {
+  background: var(--primary);
+}
+
+.track-step.is-current .track-step-label {
+  color: var(--primary);
+}
+
+.track-note {
+  margin: 20px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--body);
+  font-size: 0.9rem;
+}
+
+.track-note-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.track-note-locked {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.track-subtitle {
+  margin: 26px 0 12px;
+  font-size: 1.05rem;
+}
+
+.track-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.track-item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.track-item img,
+.track-item-noimg {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.track-item img {
+  object-fit: cover;
+}
+
+.track-item-noimg {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.track-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.track-item-name {
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.track-item-body small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.track-item-qty {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.track-item-price {
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.track-totals {
+  margin-top: 18px;
+}
+
+.track-total {
+  border-top: 2px solid var(--ink);
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.track-delivery {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--primary);
+}
+
+.track-delivery div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--body);
+  font-size: 0.88rem;
+}
+
+.track-delivery strong {
+  color: var(--ink);
+}
+
+.track-cancel {
+  margin-top: 20px;
+}
+
+.track-confirm {
+  padding: 16px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background: #fef2f2;
+}
+
+.track-confirm p {
+  margin: 0 0 12px;
+  color: #991b1b;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.track-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.track-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+[data-theme='dark'] .track-error,
+[data-theme='dark'] .track-confirm {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.14);
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .track-confirm p {
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .track-note-cancelled {
+  background: rgba(220, 38, 38, 0.14);
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .track-note-locked {
+  background: rgba(234, 88, 12, 0.14);
+  color: #fdba74;
+}
+
+@media (max-width: 720px) {
+  .track-page {
+    padding: 24px 14px 56px;
+  }
+
+  .track-card {
+    padding: 20px 16px;
+  }
+
+  .track-form {
+    grid-template-columns: 1fr;
+  }
+
+  .track-form .btn {
+    width: 100%;
+  }
+
+  .track-item {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .track-item img,
+  .track-item-noimg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .track-item-price {
+    grid-column: 2 / -1;
+    text-align: end;
+  }
+
+  .track-step-label {
+    font-size: 0.72rem;
+  }
+
+  .track-dates {
+    gap: 16px;
+  }
+}
+
+/* ==========================================================================
+   Footer on phones — compact, centred brand and two link columns
+   ========================================================================== */
+@media (max-width: 760px) {
+  .footer {
+    margin-top: 40px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 18px;
+    padding: 30px 18px 26px;
+  }
+
+  /* The brand block owns the full width and is centred; Shop and Help sit
+     next to each other underneath, which keeps the footer short. */
+  .footer-brand {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 22px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .footer-brand .brand-footer {
+    margin-bottom: 10px;
+  }
+
+  .footer-brand .brand-logo {
+    height: 42px;
+  }
+
+  .footer-brand p {
+    margin: 0 auto;
+    max-width: 36ch;
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .footer-perks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .footer-perks li {
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.08);
+    font-size: 0.76rem;
+  }
+
+  .footer-social {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  .footer-social h4 {
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+
+  .social-links {
+    justify-content: center;
+    gap: 9px;
+  }
+
+  .social-link {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  .social-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .footer-col {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .footer-col h4 {
+    margin-bottom: 2px;
+    font-size: 0.9rem;
+  }
+
+  .footer-col a {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .footer-bottom-inner {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 16px 18px;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  .footer-bottom-right {
+    gap: 8px;
+  }
+}
+
+/* Owner-password confirmation before deleting an order. */
+.modal-sm {
+  max-width: 430px;
+}
+
+.modal-sm .modal-actions {
+  justify-content: flex-end;
+}
+
+.modal-sm .form-alert {
+  margin: 4px 0 0;
 }

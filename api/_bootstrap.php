@@ -1261,3 +1261,4 @@ require __DIR__ . '/lib/store.php';
 // ---------------------------------------------------------------- Extras (QR confirmation)
 require __DIR__ . '/lib/ratelimit.php';
 require __DIR__ . '/lib/confirm.php';
+require __DIR__ . '/lib/notifications.php';

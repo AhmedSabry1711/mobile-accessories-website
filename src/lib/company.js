@@ -11,6 +11,6 @@ export const COMPANY = {
   phone: '0102 353 8775',
   whatsapp: '+201023538775',
   email: 'sales@mobiboost.com',
-  website: 'mobiboost.com',
+  website: 'mobiboost.store',
   city: { ar: 'الفيوم، مصر', en: 'Fayoum, Egypt' },
 };

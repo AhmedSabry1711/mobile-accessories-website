@@ -15,6 +15,7 @@ import Checkout from './pages/Checkout.jsx';
 import OrderSuccess from './pages/OrderSuccess.jsx';
 import OrderConfirm from './pages/OrderConfirm.jsx';
 import InfoPage from './pages/InfoPage.jsx';
+import TrackOrder from './pages/TrackOrder.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 // The admin panel is a separate chunk: shoppers should not download it (or the
@@ -72,6 +73,8 @@ export default function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-success/:orderNumber" element={<OrderSuccess />} />
+          <Route path="/track-order" element={<TrackOrder />} />
+          <Route path="/track" element={<TrackOrder />} />
           <Route path="/help" element={<InfoPage kind="help" />} />
           <Route path="/shipping" element={<InfoPage kind="shipping" />} />
           <Route path="/returns" element={<InfoPage kind="returns" />} />

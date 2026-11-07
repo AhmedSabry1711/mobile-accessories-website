@@ -19,3 +19,6 @@ Thumbs.db
 # Secrets / local environment
 .env
 .env.local
+
+# Private API overrides (CallMeBot keys, server-only secrets).
+api/config.private.php
