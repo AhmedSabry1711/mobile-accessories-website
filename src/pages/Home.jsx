@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import AdsCarousel from '../components/AdsCarousel.jsx';
+import PhoneFinder from '../components/PhoneFinder.jsx';
 import ProductShelf from '../components/ProductShelf.jsx';
 import {
   IconTruck,
@@ -157,6 +158,8 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      <PhoneFinder />
 
       <div id="deals" />
 

@@ -126,7 +126,6 @@ export default function ShippingLabel({ order, settings, confirmUrl, onClose }) 
           </div>
 
           <div className="sl-head-side">
-            <span className="sl-doc-title">{t('admin.orders.label.shipping')}</span>
             <strong className="sl-order-no sl-ltr">{order.orderNumber}</strong>
             <div className="sl-meta">
               <span>{orderDate}</span>

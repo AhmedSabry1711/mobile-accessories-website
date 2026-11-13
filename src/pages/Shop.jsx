@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { localizeCategory } from '../i18n/catalog.js';
+import { localizeModel } from '../lib/models.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
@@ -17,14 +18,35 @@ export default function Shop() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
+  const [models, setModels] = useState([]);
 
   const q = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
   const filter = searchParams.get('filter') || 'all';
+  const model = searchParams.get('model') || '';
+
+  const showModelFilter = !category || category === 'Phone Cases';
 
   useEffect(() => {
     api.get('/api/settings.php').then(setSettings).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!showModelFilter) {
+      setModels([]);
+      return () => {
+        active = false;
+      };
+    }
+    api
+      .get(`/api/products.php?models=1&category=${encodeURIComponent('Phone Cases')}`)
+      .then((res) => active && setModels(res.items || []))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [showModelFilter]);
 
   useEffect(() => {
     let active = true;
@@ -35,6 +57,7 @@ export default function Shop() {
     if (q) params.set('q', q);
     if (category) params.set('category', category);
     if (filter) params.set('filter', filter);
+    if (model) params.set('model', model);
 
     api
       .get(`/api/products.php?${params.toString()}`)
@@ -48,24 +71,35 @@ export default function Shop() {
     return () => {
       active = false;
     };
-  }, [q, category, filter, page, toast]);
+  }, [q, category, filter, model, page, toast]);
 
   useEffect(() => {
     setPage(1);
-  }, [q, category, filter]);
+  }, [q, category, filter, model]);
 
   const categories = settings?.categories || [];
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const updateParams = (patch) => {
+    const next = Object.fromEntries(searchParams.entries());
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === '' || value == null) delete next[key];
+      else next[key] = value;
+    }
+    setSearchParams(next);
+  };
+
   const title = q
     ? t('shop.title.search', { q })
-    : category
-      ? localizeCategory(category, lang)
-      : filter === 'sale'
-        ? t('shop.title.sale')
-        : filter === 'new'
-          ? t('shop.title.new')
-          : t('shop.title.all');
+    : model
+      ? t('shop.title.model', { model: localizeModel(model, lang) })
+      : category
+        ? localizeCategory(category, lang)
+        : filter === 'sale'
+          ? t('shop.title.sale')
+          : filter === 'new'
+            ? t('shop.title.new')
+            : t('shop.title.all');
 
   return (
     <div className="container shop">
@@ -76,20 +110,20 @@ export default function Shop() {
 
       <div className="shop-filters">
         <button
-          className={`chip ${filter === 'all' && !category ? 'chip-active' : ''}`}
+          className={`chip ${filter === 'all' && !category && !model ? 'chip-active' : ''}`}
           onClick={() => setSearchParams({})}
         >
           {t('shop.filters.all')}
         </button>
         <button
           className={`chip ${filter === 'sale' ? 'chip-active' : ''}`}
-          onClick={() => setSearchParams({ filter: 'sale' })}
+          onClick={() => updateParams({ filter: 'sale' })}
         >
           {t('shop.filters.sale')}
         </button>
         <button
           className={`chip ${filter === 'new' ? 'chip-active' : ''}`}
-          onClick={() => setSearchParams({ filter: 'new' })}
+          onClick={() => updateParams({ filter: 'new' })}
         >
           {t('shop.filters.new')}
         </button>
@@ -97,12 +131,51 @@ export default function Shop() {
           <button
             key={item}
             className={`chip ${category === item ? 'chip-active' : ''}`}
-            onClick={() => setSearchParams({ category: item })}
+            onClick={() =>
+              updateParams({
+                category: item,
+                model: item === 'Phone Cases' ? model : '',
+              })
+            }
           >
             {localizeCategory(item, lang)}
           </button>
         ))}
       </div>
+
+      {showModelFilter && models.length > 0 && (
+        <div className="shop-model-filter">
+          <span className="shop-filter-label">{t('shop.filters.model')}</span>
+          <div className="shop-filters shop-model-chips" role="tablist" aria-label={t('shop.filters.model')}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!model}
+              className={`chip ${!model ? 'chip-active' : ''}`}
+              onClick={() => updateParams({ model: '' })}
+            >
+              {t('shop.filters.allModels')}
+            </button>
+            {models.map((item) => (
+              <button
+                key={item.model}
+                type="button"
+                role="tab"
+                aria-selected={model === item.model}
+                className={`chip ${model === item.model ? 'chip-active' : ''}`}
+                onClick={() =>
+                  updateParams({ category: 'Phone Cases', model: item.model })
+                }
+              >
+                {localizeModel(item.model, lang)}
+                {item.products != null && (
+                  <span className="chip-count">{item.products}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="product-grid">

@@ -169,9 +169,10 @@ $order = mongo_insert('orders', [
 
 decrement_stock($cart['items']);
 
-// Best-effort WhatsApp alert to the owner. Fails silently: the order is already
-// saved, so a notification problem must never turn a successful sale into an error.
+// Best-effort alerts to the owner. Each channel fails silently: the order is
+// already saved, so a notification problem must never turn a sale into an error.
 notify_order_whatsapp($order);
+notify_order_telegram($order);
 
 ok(order_payload($order), 201);
 

@@ -77,6 +77,16 @@ const ar = {
     delivery: 'التوصيل خلال 24–48 ساعة',
     categories: 'تسوق حسب القسم',
     categoriesSub: 'اختار القسم اللي يناسبك',
+    phoneFinder: {
+      title: 'حدد نوع تليفونك',
+      subtitle: 'اختار موديل جهازك وشوف الجرابات المتوافقة معاه فورًا — كلها متاحة للدفع عند الاستلام.',
+      viewAll: ({ model }) => `كل جرابات ${model}`,
+      count: ({ n }) => `${n} جراب`,
+      empty: {
+        title: 'لا توجد جرابات لهذا الموديل حاليًا',
+        text: 'جرّب موديل تاني أو تصفح كل الجرابات.',
+      },
+    },
     perks: {
       fast: { title: 'توصيل سريع', text: '24–48 ساعة' },
       quality: { title: 'جودة عالية', text: 'مختبرة ومضمونة' },
@@ -92,9 +102,15 @@ const ar = {
     },
   },
   shop: {
-    title: { all: 'جميع المنتجات', sale: 'العروض والخصومات', new: 'وصل حديثاً', search: 'نتائج البحث عن "{q}"' },
+    title: {
+      all: 'جميع المنتجات',
+      sale: 'العروض والخصومات',
+      new: 'وصل حديثاً',
+      search: 'نتائج البحث عن "{q}"',
+      model: 'جرابات {model}',
+    },
     count: ({ n }) => (n === 1 ? 'منتج واحد' : `${n} منتج`),
-    filters: { all: 'الكل', sale: 'تخفيض', new: 'جديد' },
+    filters: { all: 'الكل', sale: 'تخفيض', new: 'جديد', model: 'موديل الموبايل', allModels: 'كل الموديلات' },
     previous: 'السابق',
     next: 'التالي',
     pageOf: 'صفحة {page} من {pages}',
@@ -506,7 +522,7 @@ const ar = {
       confirmedAt: 'تم التأكيد في',
       label: {
         short: 'بوليصة',
-        shipping: 'بوليصة شحن',
+        shipping: 'بوليصة',
         print: 'طباعة البوليصة',
         close: 'إغلاق',
         recipient: 'بيانات المستلم',
@@ -685,6 +701,16 @@ const en = {
     delivery: 'Delivery in 24–48 hours',
     categories: 'Shop by category',
     categoriesSub: 'Pick the category you need',
+    phoneFinder: {
+      title: 'Find your phone',
+      subtitle: 'Pick your model and instantly see the cases that fit — all available with cash on delivery.',
+      viewAll: ({ model }) => `All ${model} cases`,
+      count: ({ n }) => `${n} case${n === 1 ? '' : 's'}`,
+      empty: {
+        title: 'No cases for this model yet',
+        text: 'Try another model or browse all cases.',
+      },
+    },
     perks: {
       fast: { title: 'Fast delivery', text: '24–48 hours' },
       quality: { title: 'Premium quality', text: 'Tested & guaranteed' },
@@ -711,9 +737,10 @@ const en = {
       sale: 'Deals & Discounts',
       new: 'New Arrivals',
       search: 'Search results for “{q}”',
+      model: '{model} cases',
     },
     count: ({ n }) => (n === 1 ? '1 product' : `${n} products`),
-    filters: { all: 'All', sale: 'On sale', new: 'New' },
+    filters: { all: 'All', sale: 'On sale', new: 'New', model: 'Phone model', allModels: 'All models' },
     previous: 'Previous',
     next: 'Next',
     pageOf: 'Page {page} of {pages}',

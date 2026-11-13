@@ -4,6 +4,7 @@ import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import ModelTabs from '../components/ModelTabs.jsx';
 import { localizeColor, localizeProduct } from '../i18n/catalog.js';
 import RatingStars from '../components/RatingStars.jsx';
 import { IconHeart, IconCart, IconMinus, IconPlus, IconStar } from '../components/icons.jsx';
@@ -254,21 +255,15 @@ export default function ProductDetails() {
 
           {hasVariants && (
             <div className="variant-block">
-              <label className="variant-label" htmlFor="variant-model">
+              <div className="variant-label" id="variant-model-label">
                 {t('product.model')}
-              </label>
-              <select
-                id="variant-model"
-                className="variant-select"
+              </div>
+              <ModelTabs
+                models={variants}
                 value={selectedModel}
-                onChange={(e) => selectModel(e.target.value)}
-              >
-                {variants.map((variant) => (
-                  <option key={variant.model} value={variant.model}>
-                    {variant.model}
-                  </option>
-                ))}
-              </select>
+                onChange={selectModel}
+                ariaLabel={t('product.model')}
+              />
 
               <label className="variant-label">{t('product.color')}</label>
               <div className="variant-colors">

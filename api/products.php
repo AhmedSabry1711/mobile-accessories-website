@@ -52,8 +52,46 @@ if ($relatedTo !== null && $relatedTo !== '') {
 $filter = (string)($_GET['filter'] ?? 'all');
 $category = trim((string)($_GET['category'] ?? ''));
 $q = trim((string)($_GET['q'] ?? ''));
+$model = trim((string)($_GET['model'] ?? ''));
 $limit = max(1, min(100, (int)($_GET['limit'] ?? $CONFIG['pageSize'])));
 $page = max(1, (int)($_GET['page'] ?? 1));
+
+// ---- Variant model index --------------------------------------------------
+// GET /api/products.php?models=1[&category=Phone Cases]
+// Powers the "pick your phone" picker and the shop's model tabs. Counts only
+// include products that still have at least one in-stock colour, so the UI
+// never offers a model the shop cannot actually ship.
+if (!empty($_GET['models'])) {
+    $query = ['status' => 'active'];
+    if ($category !== '') {
+        $query['category'] = $category;
+    }
+
+    $models = [];
+    foreach (mongo_find('products', $query) as $product) {
+        foreach ((array)($product['variants'] ?? []) as $variant) {
+            $name = trim((string)($variant['model'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            if (!isset($models[$name])) {
+                $models[$name] = ['model' => $name, 'products' => 0, 'stock' => 0];
+            }
+            $stock = 0;
+            foreach ((array)($variant['colors'] ?? []) as $color) {
+                $stock += max(0, (int)($color['stock'] ?? 0));
+            }
+            $models[$name]['stock'] += $stock;
+            if ($stock > 0) {
+                $models[$name]['products']++;
+            }
+        }
+    }
+
+    $models = array_values(array_filter($models, fn($m) => $m['products'] > 0));
+    usort($models, fn($a, $b) => $b['products'] <=> $a['products'] ?: strcasecmp($a['model'], $b['model']));
+    ok(['items' => $models]);
+}
 
 $query = ['status' => 'active'];
 
@@ -84,12 +122,30 @@ if ($filter === 'sale') {
     $sort = ['compareAtPrice' => -1];
 }
 
-$total = mongo_count('products', $query);
-$rows = mongo_find('products', $query, [
-    'sort' => $sort,
-    'limit' => $limit,
-    'skip' => ($page - 1) * $limit,
-]);
+if ($model !== '') {
+    // Model lives in a child table, so filter the in-memory documents after the
+    // regular category/search query and paginate the narrowed list.
+    $matched = array_values(array_filter(
+        mongo_find('products', $query, ['sort' => $sort]),
+        static function (array $product) use ($model): bool {
+            foreach ((array)($product['variants'] ?? []) as $variant) {
+                if ((string)($variant['model'] ?? '') === $model) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    ));
+    $total = count($matched);
+    $rows = array_slice($matched, ($page - 1) * $limit, $limit);
+} else {
+    $total = mongo_count('products', $query);
+    $rows = mongo_find('products', $query, [
+        'sort' => $sort,
+        'limit' => $limit,
+        'skip' => ($page - 1) * $limit,
+    ]);
+}
 
 ok([
     'items' => array_map('enrich_product', $rows),

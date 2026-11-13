@@ -758,6 +758,55 @@ code {
   font-size: 0.98rem;
 }
 
+/* ------------------------------------------------------- find your phone */
+.phone-finder {
+  padding: 24px 0 12px;
+}
+
+.phone-finder-shell {
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 48%, #ecfdf5 100%);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 28px clamp(18px, 3vw, 34px) 30px;
+  box-shadow: var(--shadow);
+}
+
+.phone-finder-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.phone-finder-head h2 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.phone-finder-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 62ch;
+}
+
+.phone-finder .model-tabs-cards {
+  margin-bottom: 22px;
+}
+
+.phone-finder-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+.phone-finder-empty {
+  padding: 30px 16px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
 /* ------------------------------------------------------------------ shelves */
 .shelf {
   padding: 34px 0;
@@ -1296,6 +1345,161 @@ code {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Interactive model tabs (product page + home picker) */
+.model-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.model-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.86rem;
+  text-align: start;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.model-tab:hover {
+  border-color: var(--primary);
+  box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1px);
+}
+
+.model-tab:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.model-tab-active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.model-tab-out {
+  opacity: 0.55;
+}
+
+.model-tab-img {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f1f5f9;
+  object-fit: contain;
+}
+
+.model-tab-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.model-tab-label {
+  line-height: 1.3;
+}
+
+.model-tab-count {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.model-tab-active .model-tab-count {
+  color: var(--primary-dark);
+}
+
+/* Illustrated cards variant */
+.model-tabs-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 12px;
+}
+
+.model-tabs-cards .model-tab {
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 12px;
+  min-height: 168px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  text-align: center;
+}
+
+.model-tabs-cards .model-tab-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  background: transparent;
+}
+
+.model-tabs-cards .model-tab-label {
+  font-size: 1rem;
+}
+
+.model-tab-skeleton {
+  min-height: 168px;
+  border-radius: 18px;
+  border-color: transparent;
+  background: linear-gradient(100deg, #eef1f6 30%, #f8fafc 50%, #eef1f6 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* Model filter on the shop page */
+.shop-model-filter {
+  margin: -12px 0 26px;
+}
+
+.shop-filter-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.shop-model-chips {
+  margin-bottom: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.chip-active .chip-count {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .variant-select {
@@ -3250,6 +3454,35 @@ code {
   box-shadow: none;
 }
 
+[data-theme='dark'] .phone-finder-shell {
+  background: linear-gradient(135deg, #0b1b35 0%, #0f172a 52%, #08251b 100%);
+}
+
+[data-theme='dark'] .model-tab {
+  background: #1e293b;
+}
+
+[data-theme='dark'] .model-tabs-cards .model-tab {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+}
+
+[data-theme='dark'] .model-tab-img {
+  background: #0f172a;
+}
+
+[data-theme='dark'] .model-tab-active,
+[data-theme='dark'] .model-tab-active .model-tab-count {
+  color: #c7d2fe;
+}
+
+[data-theme='dark'] .phone-finder-empty {
+  background: rgba(15, 23, 42, 0.68);
+}
+
+[data-theme='dark'] .chip-count {
+  background: rgba(226, 232, 240, 0.16);
+}
+
 /* Form controls */
 [data-theme='dark'] .form-group input,
 [data-theme='dark'] .form-group select,
@@ -5107,4 +5340,52 @@ button.footer-admin {
 
 .modal-sm .form-alert {
   margin: 4px 0 0;
+}
+
+/* ==========================================================================
+   Phone finder + model tabs on small screens
+   ========================================================================== */
+@media (max-width: 760px) {
+  .phone-finder-shell {
+    padding: 22px 16px 24px;
+    border-radius: 20px;
+  }
+
+  .phone-finder-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .phone-finder-head .btn {
+    align-self: flex-start;
+  }
+
+  .model-tabs-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .model-tabs-cards .model-tab {
+    min-height: 150px;
+    padding: 14px 10px;
+  }
+
+  .model-tabs-cards .model-tab-img {
+    width: 78px;
+    height: 78px;
+  }
+
+  .phone-finder-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .model-tabs-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .model-tabs-cards .model-tab-label {
+    font-size: 0.9rem;
+  }
 }

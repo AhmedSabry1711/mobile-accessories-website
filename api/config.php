@@ -60,6 +60,18 @@ return [
         'apiKey' => getenv('CALLMEBOT_APIKEY') ?: '',
     ],
 
+    // Instant Telegram order alerts.
+    // Create a bot with @BotFather, send it one message, then read the chat id
+    // from https://api.telegram.org/bot<token>/getUpdates.
+    // Keep the real token out of this tracked file: set TELEGRAM_BOT_TOKEN /
+    // TELEGRAM_CHAT_ID on the server, or add a 'telegram' block to
+    // api/config.private.php (git-ignored).
+    'telegram' => [
+        'enabled' => getenv('TELEGRAM_ENABLED') !== '0',
+        'botToken' => getenv('TELEGRAM_BOT_TOKEN') ?: '',
+        'chatId' => getenv('TELEGRAM_CHAT_ID') ?: '',
+    ],
+
     // Public site URL used to build the QR links printed on shipping labels.
     // Leave empty to derive it from the admin request; set it in production,
     // e.g. 'https://mobiboost.com' (no trailing slash).
