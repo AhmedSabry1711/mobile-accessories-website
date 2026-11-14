@@ -151,6 +151,26 @@ code {
   animation: none;
 }
 
+/* On phones/tablets the zoom in btn-pulse is wider than a full-width button and
+   used to push the whole product page sideways. Keep the glow, drop the scale. */
+@keyframes btn-pulse-flat {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .btn-pulse {
+    animation-name: btn-pulse-flat;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn-pulse {
     animation: none;
@@ -1175,6 +1195,7 @@ code {
 /* ------------------------------------------------------------------ product page */
 .product-page {
   padding: 24px 20px 60px;
+  overflow-x: clip;
 }
 
 .breadcrumbs {
@@ -1197,6 +1218,12 @@ code {
   gap: 44px;
 }
 
+/* Grid items default to min-width:auto, so a wide image/price can stretch the
+   whole column past the viewport on phones. */
+.product-main > * {
+  min-width: 0;
+}
+
 .gallery-main {
   position: relative;
   border-radius: var(--radius);
@@ -1207,9 +1234,11 @@ code {
 }
 
 .gallery-main img {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .gallery-thumbs {
@@ -1411,19 +1440,17 @@ code {
   animation: shimmer 1.4s infinite;
 }
 
-/* Model filter on the shop page */
+/* Model filter on the shop page — shown under the CASES category title only */
 .shop-model-filter {
-  margin: -12px 0 26px;
+  margin: 0 0 26px;
 }
 
 .shop-filter-label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
 }
 
 .shop-model-chips {
@@ -1434,22 +1461,6 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-
-.chip-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.chip-active .chip-count {
-  background: rgba(255, 255, 255, 0.22);
 }
 
 .variant-select {
@@ -3455,10 +3466,6 @@ code {
 
 [data-theme='dark'] .phone-finder-empty {
   background: rgba(15, 23, 42, 0.68);
-}
-
-[data-theme='dark'] .chip-count {
-  background: rgba(226, 232, 240, 0.16);
 }
 
 /* Form controls */

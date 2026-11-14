@@ -18,7 +18,6 @@ export default function Shop() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState(null);
   const [models, setModels] = useState([]);
 
   const q = searchParams.get('q') || '';
@@ -27,11 +26,9 @@ export default function Shop() {
   const model = searchParams.get('model') || '';
   const activeCategory = canonicalCategory(category);
 
-  const showModelFilter = !category || activeCategory === CASES_CATEGORY;
-
-  useEffect(() => {
-    api.get('/api/settings.php').then(setSettings).catch(() => {});
-  }, []);
+  // The phone-model picker belongs to the cases section only, between the
+  // category title and the grid — never in search results or other sections.
+  const showModelFilter = !q && activeCategory === CASES_CATEGORY;
 
   useEffect(() => {
     let active = true;
@@ -79,7 +76,6 @@ export default function Shop() {
     setPage(1);
   }, [q, category, filter, model]);
 
-  const categories = settings?.categories || [];
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const updateParams = (patch) => {
@@ -107,47 +103,11 @@ export default function Shop() {
     <div className="container shop">
       <div className="shop-head">
         <h1>{title}</h1>
-        <p>{loading ? t('common.loading') : t('shop.count', { n: total })}</p>
-      </div>
-
-      <div className="shop-filters">
-        <button
-          className={`chip ${filter === 'all' && !category && !model ? 'chip-active' : ''}`}
-          onClick={() => setSearchParams({})}
-        >
-          {t('shop.filters.all')}
-        </button>
-        <button
-          className={`chip ${filter === 'sale' ? 'chip-active' : ''}`}
-          onClick={() => updateParams({ filter: 'sale' })}
-        >
-          {t('shop.filters.sale')}
-        </button>
-        <button
-          className={`chip ${filter === 'new' ? 'chip-active' : ''}`}
-          onClick={() => updateParams({ filter: 'new' })}
-        >
-          {t('shop.filters.new')}
-        </button>
-        {categories.map((item) => (
-          <button
-            key={item}
-            className={`chip ${activeCategory === item ? 'chip-active' : ''}`}
-            onClick={() =>
-              updateParams({
-                category: item,
-                model: item === CASES_CATEGORY ? model : '',
-              })
-            }
-          >
-            {localizeCategory(item, lang)}
-          </button>
-        ))}
       </div>
 
       {showModelFilter && models.length > 0 && (
         <div className="shop-model-filter">
-          <span className="shop-filter-label">{t('shop.filters.model')}</span>
+          <span className="shop-filter-label">{t('home.phoneFinder.title')}</span>
           <div className="shop-filters shop-model-chips" role="tablist" aria-label={t('shop.filters.model')}>
             <button
               type="button"
@@ -170,9 +130,6 @@ export default function Shop() {
                 }
               >
                 {localizeModel(item.model, lang)}
-                {item.products != null && (
-                  <span className="chip-count">{item.products}</span>
-                )}
               </button>
             ))}
           </div>
