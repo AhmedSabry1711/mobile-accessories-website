@@ -87,7 +87,7 @@ save_settings([
     'whatsapp' => '+201023538775',
     'shipping' => ['enabled' => true, 'flatRate' => 4.99, 'freeOver' => 50.0],
     'currency' => ['symbol' => '$', 'code' => 'USD'],
-    'categories' => ['Phone Cases', 'Chargers', 'Cables', 'Earbuds'],
+    'categories' => ['CASES', 'CABLE', 'CHARGER', 'AUDIO', 'PROTECTIVE SCREEN'],
 ]);
 
 // ---------------------------------------------------------------- admin
@@ -170,40 +170,40 @@ foreach ($armorVariants as &$armorVariant) {
 unset($armorVariant, $armorColor);
 
 seed_product(
-    'Armor Shockproof Bumper Case', 'Phone Cases',
+    'Armor Shockproof Bumper Case', 'CASES',
     'Military-grade drop protection with reinforced corners, raised bezel for screen and camera safety, and a non-slip grip finish. Precision cutouts keep every port and button fully accessible.',
     19.99, 6.40, 34.99, $imgCase1,
     $armorVariants
 );
 
 seed_product(
-    'Clear MagSafe Compatible Case', 'Phone Cases',
+    'Clear MagSafe Compatible Case', 'CASES',
     'Crystal-clear PC back panel that keeps your phone looking brand new, with magnetic ring alignment for MagSafe chargers and wallets. Yellowing-resistant coating.',
     14.99, 4.20, 24.99, $imgCase2,
     variant_set(['iPhone 17 Pro Max', 'iPhone 16 Pro', 'iPhone 15', 'Samsung Galaxy S25 Ultra'], ['Clear' => '#e2e8f0'])
 );
 
 seed_product(
-    'Tempered Glass Screen Protector (2-Pack)', 'Screen Protectors',
+    'Tempered Glass Screen Protector (2-Pack)', 'PROTECTIVE SCREEN',
     '9H hardness, 99.9% clarity, oleophobic anti-fingerprint coating. Easy alignment frame included. Compatible with most cases.',
     9.99, 2.30, 17.99, $imgProtector,
     variant_set($caseModels, ['Standard' => '#94a3b8'])
 );
 
 seed_product(
-    '65W GaN Fast Charger', 'Chargers',
+    '65W GaN Fast Charger', 'CHARGER',
     'Compact GaN II technology charges a laptop and phone at once. USB-C + USB-A ports, foldable prongs, over-current and temperature protection built in.',
     29.99, 11.50, 49.99, $imgCharger, [], 64
 );
 
 seed_product(
-    'Braided USB-C to Lightning Cable (2m)', 'Cables',
+    'Braided USB-C to Lightning Cable (2m)', 'CABLE',
     'Double-braided nylon jacket rated for 30,000+ bends. Fast data sync and charging up to 100W. Lifetime warranty.',
     12.99, 3.80, 21.99, $imgCable, [], 120
 );
 
 seed_product(
-    'AirSound Pro Wireless Earbuds', 'Earbuds',
+    'AirSound Pro Wireless Earbuds', 'AUDIO',
     'Active noise cancellation, 36-hour total battery life with the charging case, IPX5 sweat resistance, and crystal-call microphones.',
     45.99, 18.75, 79.99, $imgEarbuds, [], 38
 );
@@ -227,7 +227,7 @@ seed_product(
 );
 
 seed_product(
-    '10000mAh Slim Power Bank', 'Chargers',
+    '10000mAh Slim Power Bank', 'CHARGER',
     'Pocket-sized 10000mAh battery with 22.5W fast charging output. LED charge indicator, dual output ports, airline-safe cells.',
     24.99, 9.90, 39.99, $imgBattery, [], 45
 );

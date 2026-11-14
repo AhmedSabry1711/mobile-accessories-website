@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
-import { localizeCategory } from '../i18n/catalog.js';
+import { localizeCategory, canonicalCategory } from '../i18n/catalog.js';
 import { localizeModel } from '../lib/models.js';
 import ProductCard from '../components/ProductCard.jsx';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 
 const PAGE_SIZE = 24;
+const CASES_CATEGORY = 'CASES';
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,8 +25,9 @@ export default function Shop() {
   const category = searchParams.get('category') || '';
   const filter = searchParams.get('filter') || 'all';
   const model = searchParams.get('model') || '';
+  const activeCategory = canonicalCategory(category);
 
-  const showModelFilter = !category || category === 'Phone Cases';
+  const showModelFilter = !category || activeCategory === CASES_CATEGORY;
 
   useEffect(() => {
     api.get('/api/settings.php').then(setSettings).catch(() => {});
@@ -40,7 +42,7 @@ export default function Shop() {
       };
     }
     api
-      .get(`/api/products.php?models=1&category=${encodeURIComponent('Phone Cases')}`)
+      .get(`/api/products.php?models=1&category=${encodeURIComponent(CASES_CATEGORY)}`)
       .then((res) => active && setModels(res.items || []))
       .catch(() => {});
     return () => {
@@ -130,11 +132,11 @@ export default function Shop() {
         {categories.map((item) => (
           <button
             key={item}
-            className={`chip ${category === item ? 'chip-active' : ''}`}
+            className={`chip ${activeCategory === item ? 'chip-active' : ''}`}
             onClick={() =>
               updateParams({
                 category: item,
-                model: item === 'Phone Cases' ? model : '',
+                model: item === CASES_CATEGORY ? model : '',
               })
             }
           >
@@ -164,7 +166,7 @@ export default function Shop() {
                 aria-selected={model === item.model}
                 className={`chip ${model === item.model ? 'chip-active' : ''}`}
                 onClick={() =>
-                  updateParams({ category: 'Phone Cases', model: item.model })
+                  updateParams({ category: CASES_CATEGORY, model: item.model })
                 }
               >
                 {localizeModel(item.model, lang)}

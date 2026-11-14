@@ -44,10 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         'code' => strtoupper(trim((string)($currency['code'] ?? 'USD'))) ?: 'USD',
     ];
 
-    $categories = array_values(array_filter(array_map('trim', (array)($data['categories'] ?? [])), fn($c) => $c !== ''));
-    if (count($categories) > 30) {
-        $errors['categories'] = 'Maximum 30 categories';
-    }
+    $categories = mb_fixed_categories();
 
     if ($errors) {
         fail('Validation failed', 422, $errors);

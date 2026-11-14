@@ -14,7 +14,7 @@ function default_settings(): array {
         'whatsapp' => '',
         'shipping' => ['enabled' => true, 'flatRate' => 4.99, 'freeOver' => 50.0],
         'currency' => ['symbol' => $CONFIG['currencySymbol'], 'code' => $CONFIG['currencyCode']],
-        'categories' => [],
+        'categories' => mb_fixed_categories(),
     ];
 }
 
@@ -49,6 +49,12 @@ function save_settings(array $settings): void {
 function enrich_product(array $p): array {
     $p['id'] = (string)$p['_id'];
     unset($p['_id']);
+    // Products keep one canonical category even when an older row still stores a
+    // legacy label ("Phone Cases", "Earbuds", …).
+    $canonical = mb_canonical_category((string)($p['category'] ?? ''));
+    if ($canonical !== '') {
+        $p['category'] = $canonical;
+    }
     $p['price'] = (float)$p['price'];
     $p['costPrice'] = (float)($p['costPrice'] ?? 0);
     $p['compareAtPrice'] = (float)($p['compareAtPrice'] ?? 0);

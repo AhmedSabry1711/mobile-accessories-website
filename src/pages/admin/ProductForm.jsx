@@ -4,6 +4,7 @@ import { api, money } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import { IconPlus, IconTrash, IconImage } from '../../components/icons.jsx';
+import { CATEGORY_KEYS, canonicalCategory, localizeCategory } from '../../i18n/catalog.js';
 
 const emptyColor = () => ({ name: '', hex: '#2563eb', stock: 0, image: '' });
 const emptyVariant = () => ({ model: '', colors: [emptyColor()] });
@@ -25,12 +26,11 @@ export default function ProductForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { toast } = useStore();
-  const { t } = useUI();
+  const { t, lang } = useUI();
 
   const [form, setForm] = useState(initialForm);
   const [variants, setVariants] = useState([]);
   const [useVariants, setUseVariants] = useState(false);
-  const [categories, setCategories] = useState([]);
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,13 +45,6 @@ export default function ProductForm() {
       errorSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [errors]);
-
-  useEffect(() => {
-    api
-      .get('/api/admin/settings.php')
-      .then((s) => setCategories(s?.categories || []))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -142,8 +135,8 @@ export default function ProductForm() {
     if (name.length < 2 || name.length > 120) {
       found.name = t('admin.productForm.errName');
     }
-    const category = form.category.trim();
-    if (category.length < 2 || category.length > 60) {
+    const category = canonicalCategory(form.category);
+    if (!category) {
       found.category = t('admin.productForm.errCategory');
     }
     const description = form.description.trim();
@@ -292,7 +285,7 @@ export default function ProductForm() {
 
     const payload = {
       name: form.name.trim(),
-      category: form.category.trim(),
+      category: canonicalCategory(form.category),
       description: form.description.trim(),
       price: parseFloat(form.price) || 0,
       costPrice: parseFloat(form.costPrice) || 0,
@@ -384,19 +377,19 @@ export default function ProductForm() {
 
           <div className="form-group">
             <label htmlFor="pf-category">{t('admin.productForm.category')}</label>
-            <input
+            <select
               id="pf-category"
-              list="pf-categories"
               value={form.category}
               onChange={(e) => update('category', e.target.value)}
-              placeholder={t('admin.productForm.categoryPlaceholder')}
               required
-            />
-            <datalist id="pf-categories">
-              {categories.map((c) => (
-                <option key={c} value={c} />
+            >
+              <option value="">—</option>
+              {CATEGORY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {localizeCategory(key, lang)}
+                </option>
               ))}
-            </datalist>
+            </select>
             {errors.category && <span className="field-error">{errors.category}</span>}
           </div>
 

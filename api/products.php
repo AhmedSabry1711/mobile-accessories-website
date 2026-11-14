@@ -64,7 +64,7 @@ $page = max(1, (int)($_GET['page'] ?? 1));
 if (!empty($_GET['models'])) {
     $query = ['status' => 'active'];
     if ($category !== '') {
-        $query['category'] = $category;
+        $query['category'] = ['$in' => mb_category_storage_values($category)];
     }
 
     $models = [];
@@ -104,16 +104,7 @@ if ($filter === 'sale') {
 }
 
 if ($category !== '') {
-    $query['category'] = $category;
-}
-
-if ($q !== '') {
-    $regex = new MongoDB\BSON\Regex(preg_quote($q, '/'), 'i');
-    $query['$or'] = [
-        ['name' => $regex],
-        ['description' => $regex],
-        ['category' => $regex],
-    ];
+    $query['category'] = ['$in' => mb_category_storage_values($category)];
 }
 
 $sort = ['createdAt' => -1];
@@ -122,22 +113,46 @@ if ($filter === 'sale') {
     $sort = ['compareAtPrice' => -1];
 }
 
-if ($model !== '') {
-    // Model lives in a child table, so filter the in-memory documents after the
-    // regular category/search query and paginate the narrowed list.
-    $matched = array_values(array_filter(
-        mongo_find('products', $query, ['sort' => $sort]),
-        static function (array $product) use ($model): bool {
-            foreach ((array)($product['variants'] ?? []) as $variant) {
-                if ((string)($variant['model'] ?? '') === $model) {
-                    return true;
-                }
+if ($q !== '' || $model !== '') {
+    // Search hits variant models (phone compatibility), which live in a child
+    // table, and the model filter needs the same in-memory pass. Both use the
+    // documents already loaded by the store layer, then paginate the result.
+    $candidates = mongo_find('products', $query, $q === '' ? ['sort' => $sort] : []);
+
+    if ($q !== '') {
+        $scored = [];
+        foreach ($candidates as $product) {
+            $score = mb_search_score($product, $q);
+            if ($score > 0) {
+                $scored[] = ['score' => $score, 'product' => $product];
             }
-            return false;
         }
-    ));
-    $total = count($matched);
-    $rows = array_slice($matched, ($page - 1) * $limit, $limit);
+        usort($scored, static function (array $a, array $b): int {
+            return $b['score'] <=> $a['score']
+                ?: strcmp(
+                    (string)($b['product']['createdAt'] ?? ''),
+                    (string)($a['product']['createdAt'] ?? '')
+                );
+        });
+        $candidates = array_map(static fn(array $entry) => $entry['product'], $scored);
+    }
+
+    if ($model !== '') {
+        $candidates = array_values(array_filter(
+            $candidates,
+            static function (array $product) use ($model): bool {
+                foreach ((array)($product['variants'] ?? []) as $variant) {
+                    if (strcasecmp((string)($variant['model'] ?? ''), $model) === 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        ));
+    }
+
+    $total = count($candidates);
+    $rows = array_slice($candidates, ($page - 1) * $limit, $limit);
 } else {
     $total = mongo_count('products', $query);
     $rows = mongo_find('products', $query, [

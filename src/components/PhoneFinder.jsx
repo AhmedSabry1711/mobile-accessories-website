@@ -7,7 +7,7 @@ import ModelTabs from './ModelTabs.jsx';
 import ProductCard from './ProductCard.jsx';
 import { localizeModel, variantInStock } from '../lib/models.js';
 
-const CASES_CATEGORY = 'Phone Cases';
+const CASES_CATEGORY = 'CASES';
 const MAX_VISIBLE = 8;
 
 /**
@@ -96,7 +96,6 @@ export default function PhoneFinder() {
               onChange={setActive}
               variant="cards"
               ariaLabel={t('home.phoneFinder.title')}
-              showCounts
             />
           )}
 

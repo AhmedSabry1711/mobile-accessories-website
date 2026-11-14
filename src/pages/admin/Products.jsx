@@ -4,10 +4,11 @@ import { api, money } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import { IconPlus, IconEdit, IconTrash, IconSearch } from '../../components/icons.jsx';
+import { localizeCategory } from '../../i18n/catalog.js';
 
 export default function Products() {
   const { toast } = useStore();
-  const { t } = useUI();
+  const { t, lang } = useUI();
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -100,7 +101,7 @@ export default function Products() {
                       <small className="muted block">{t('admin.products.variants')}</small>
                     )}
                   </td>
-                  <td>{product.category}</td>
+                  <td>{localizeCategory(product.category, lang)}</td>
                   <td>{money(product.price)}</td>
                   <td>{money(product.costPrice)}</td>
                   <td className="profit">

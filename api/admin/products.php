@@ -87,7 +87,7 @@ function validate_product(array $data): array {
     $errors = [];
 
     $name = trim((string)($data['name'] ?? ''));
-    $category = trim((string)($data['category'] ?? ''));
+    $category = mb_canonical_category((string)($data['category'] ?? ''));
     $description = trim((string)($data['description'] ?? ''));
     $price = (float)($data['price'] ?? 0);
     $costPrice = (float)($data['costPrice'] ?? 0);
@@ -100,8 +100,8 @@ function validate_product(array $data): array {
     if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
         $errors['name'] = 'Name must be 2-120 characters';
     }
-    if (mb_strlen($category) < 2 || mb_strlen($category) > 60) {
-        $errors['category'] = 'Category must be 2-60 characters';
+    if ($category === '') {
+        $errors['category'] = 'Choose one of the fixed categories';
     }
     if (mb_strlen($description) < 10 || mb_strlen($description) > 5000) {
         $errors['description'] = 'Description must be 10-5000 characters';

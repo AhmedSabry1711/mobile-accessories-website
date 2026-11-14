@@ -13,16 +13,17 @@ import {
   IconCable,
   IconHeadphones,
 } from '../components/icons.jsx';
-import { localizeCategory } from '../i18n/catalog.js';
+import { localizeCategory, canonicalCategory } from '../i18n/catalog.js';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 
-/** Canonical category → glyph, so admin-added labels still get a sensible icon. */
+/** Canonical category → glyph. */
 const CATEGORY_ICONS = {
-  'Phone Cases': IconShield,
-  Chargers: IconBolt,
-  Cables: IconCable,
-  Earbuds: IconHeadphones,
+  CASES: IconShield,
+  CABLE: IconCable,
+  CHARGER: IconBolt,
+  AUDIO: IconHeadphones,
+  'PROTECTIVE SCREEN': IconPhone,
 };
 
 export default function Home() {
@@ -79,15 +80,6 @@ export default function Home() {
               </span>
               <span>{t('home.delivery')}</span>
             </div>
-
-            <div className="hero-actions">
-              <a href="#shop" className="btn btn-primary btn-lg">
-                {t('home.cta')}
-              </a>
-              <a href="#deals" className="btn btn-outline btn-lg">
-                {t('home.todayDeals')}
-              </a>
-            </div>
           </div>
 
           <div className="hero-perks">
@@ -140,7 +132,8 @@ export default function Home() {
             </div>
             <div className="cats-grid">
               {categories.map((category) => {
-                const Icon = CATEGORY_ICONS[category] || IconTag;
+                const canonical = canonicalCategory(category);
+                const Icon = CATEGORY_ICONS[canonical] || IconTag;
                 return (
                   <Link
                     key={category}
@@ -161,8 +154,6 @@ export default function Home() {
 
       <PhoneFinder />
 
-      <div id="deals" />
-
       <ProductShelf
         title={t('home.deals.title')}
         subtitle={t('home.deals.subtitle')}
@@ -176,8 +167,6 @@ export default function Home() {
         viewAllTo="/shop?filter=new"
         products={fresh}
       />
-
-      <div id="shop" />
 
       <ProductShelf
         title={t('home.all.title')}

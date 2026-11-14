@@ -1,12 +1,13 @@
 import { useUI } from '../context/UIContext.jsx';
-import { localizeModel, modelImage, variantStock, variantInStock } from '../lib/models.js';
+import { localizeModel, variantInStock } from '../lib/models.js';
 
 /**
- * Interactive phone-model tabs.
+ * Interactive phone-model chips.
  *
- * Replaces the old <select> dropdown with a visual, keyboard-friendly group.
- * `variant="inline"` is the compact row used on the product page;
- * `variant="cards"` is the illustrated picker used on the home page.
+ * A compact, keyboard-friendly row of model names — no artwork, so a long list
+ * of phones stays scannable. `variant="inline"` is used on the product page and
+ * `variant="cards"` keeps the home picker on the same chip design; both scroll
+ * horizontally on phones instead of growing into a tall grid.
  *
  * Props:
  *   models     [{ model, colors?, products?, stock? }]
@@ -14,7 +15,6 @@ import { localizeModel, modelImage, variantStock, variantInStock } from '../lib/
  *   onChange   (model) => void
  *   variant    'inline' | 'cards'
  *   ariaLabel  accessible name for the tab list
- *   showCounts render the product count (cards variant)
  */
 export default function ModelTabs({
   models = [],
@@ -22,7 +22,6 @@ export default function ModelTabs({
   onChange,
   variant = 'inline',
   ariaLabel,
-  showCounts = false,
 }) {
   const { t, lang } = useUI();
 
@@ -36,9 +35,6 @@ export default function ModelTabs({
     >
       {models.map((item) => {
         const model = item.model;
-        const image = modelImage(model);
-        const stock =
-          item.stock != null ? Number(item.stock) : variantStock(item);
         const inStock =
           item.products != null ? Number(item.products) > 0 : variantInStock(item);
         const active = value === model;
@@ -55,28 +51,7 @@ export default function ModelTabs({
             onClick={() => onChange(model)}
             title={localizeModel(model, lang)}
           >
-            {image && (
-              <img
-                className="model-tab-img"
-                src={image}
-                alt=""
-                width={variant === 'cards' ? 96 : 44}
-                height={variant === 'cards' ? 96 : 44}
-                loading="lazy"
-                decoding="async"
-              />
-            )}
-            <span className="model-tab-text">
-              <span className="model-tab-label">{localizeModel(model, lang)}</span>
-              {showCounts && item.products != null && (
-                <span className="model-tab-count">
-                  {t('home.phoneFinder.count', { n: Number(item.products) })}
-                </span>
-              )}
-              {!showCounts && !inStock && (
-                <span className="model-tab-count">{t('product.stockOut')}</span>
-              )}
-            </span>
+            <span className="model-tab-label">{localizeModel(model, lang)}</span>
           </button>
         );
       })}

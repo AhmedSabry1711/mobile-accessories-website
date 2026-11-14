@@ -33,6 +33,10 @@ $CONFIG = require __DIR__ . '/config.php';
 // Value-type polyfills — no-op when the real mongodb extension is loaded.
 require __DIR__ . '/lib/mongo_compat.php';
 
+// Fixed store categories (canonical keys + legacy label mapping).
+require __DIR__ . '/lib/categories.php';
+require __DIR__ . '/lib/search.php';
+
 // Uploads folder self-heal: re-create it on any API hit if it is missing (a
 // fresh deployment or a manual cleanup can remove it). Existing files are never
 // touched — only the (empty) directory is recreated so new uploads keep working.
@@ -717,7 +721,10 @@ function db_load_settings(): array {
     if (!$row) {
         return [];
     }
-    $categories = db()->query("SELECT `name` FROM `{$p}categories` ORDER BY `position`, `id`")->fetchAll(PDO::FETCH_COLUMN);
+    // Categories are fixed by the store, not editable. The table is rewritten
+    // by db_write_settings() / the migration script, but the API always returns
+    // the canonical five so the storefront never depends on a manual DB step.
+    $categories = mb_fixed_categories();
     return [[
         '_id' => db_settings_id(),
         'key' => 'store',
@@ -731,7 +738,7 @@ function db_load_settings(): array {
             'symbol' => (string)$row['currency_symbol'],
             'code' => (string)$row['currency_code'],
         ],
-        'categories' => array_map('strval', $categories),
+        'categories' => $categories,
         'updatedAt' => db_iso_col($row['updated_at']),
     ]];
 }
@@ -1044,17 +1051,13 @@ function db_write_settings(array $doc): void {
         db_datetime_col($doc['updatedAt'] ?? null) ?? gmdate('Y-m-d H:i:s'),
     ]);
 
-    if (array_key_exists('categories', $doc)) {
-        db()->exec("DELETE FROM `{$p}categories`");
-        $stmt = db()->prepare("INSERT INTO `{$p}categories` (`name`, `position`) VALUES (?, ?)");
-        $pos = 0;
-        foreach (array_values((array)($doc['categories'] ?? [])) as $name) {
-            $name = trim((string)$name);
-            if ($name === '') {
-                continue;
-            }
-            $stmt->execute([$name, $pos++]);
-        }
+    // The category list is fixed by the product, so it is always rewritten to
+    // the canonical five (legacy rows are cleaned up by a settings save).
+    db()->exec("DELETE FROM `{$p}categories`");
+    $stmt = db()->prepare("INSERT INTO `{$p}categories` (`name`, `position`) VALUES (?, ?)");
+    $pos = 0;
+    foreach (mb_fixed_categories() as $name) {
+        $stmt->execute([$name, $pos++]);
     }
 }
 

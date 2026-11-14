@@ -108,8 +108,8 @@ export default function Footer() {
           <Link to="/shop">{t('footer.links.allProducts')}</Link>
           <Link to="/shop?filter=sale">{t('footer.links.deals')}</Link>
           <Link to="/shop?filter=new">{t('footer.links.newArrivals')}</Link>
-          <Link to="/shop?category=Phone%20Cases">{t('footer.links.phoneCases')}</Link>
-          <Link to="/shop?category=Chargers">{t('footer.links.chargers')}</Link>
+          <Link to="/shop?category=CASES">{t('footer.links.phoneCases')}</Link>
+          <Link to="/shop?category=CHARGER">{t('footer.links.chargers')}</Link>
         </div>
 
         <div className="footer-col">

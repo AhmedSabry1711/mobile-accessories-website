@@ -13,24 +13,65 @@
 
 const isArabic = (lang) => String(lang || 'ar').toLowerCase().startsWith('ar');
 
-const categoryPairs = [
-  ['Phone Cases', 'جرابات'],
-  ['Chargers', 'شواحن'],
-  ['Screen Protectors', 'واقيات شاشة'],
-  ['Earbuds', 'سماعات'],
-  ['Holders', 'حوامل'],
-  ['Cables', 'كابلات'],
-  ['Accessories', 'إكسسوارات'],
-];
+/** Canonical category keys — the only categories the catalogue stores. */
+export const CATEGORY_KEYS = ['CASES', 'CABLE', 'CHARGER', 'AUDIO', 'PROTECTIVE SCREEN'];
 
-const categoryToAr = {};
-const categoryToEn = {};
-for (const [en, ar] of categoryPairs) {
-  categoryToAr[en] = ar;
-  categoryToAr[ar] = ar;
-  categoryToEn[ar] = en;
-  categoryToEn[en] = en;
-}
+/** Display labels for the five fixed categories. */
+const CATEGORY_LABELS = {
+  CASES: { en: 'Cases', ar: 'جرابات' },
+  CABLE: { en: 'Cables', ar: 'كابلات' },
+  CHARGER: { en: 'Chargers', ar: 'شواحن' },
+  AUDIO: { en: 'Audio', ar: 'صوتيات' },
+  'PROTECTIVE SCREEN': { en: 'Protective Screen', ar: 'حماية الشاشة' },
+};
+
+/**
+ * Every label that maps onto a fixed category: canonical keys, legacy English
+ * names still stored on old products, and Arabic labels typed in the admin.
+ */
+const CATEGORY_ALIASES = {
+  CASES: 'CASES',
+  CASE: 'CASES',
+  'PHONE CASES': 'CASES',
+  'PHONE CASE': 'CASES',
+  COVERS: 'CASES',
+  COVER: 'CASES',
+  جرابات: 'CASES',
+  جراب: 'CASES',
+  كفرات: 'CASES',
+  كفر: 'CASES',
+  CABLE: 'CABLE',
+  CABLES: 'CABLE',
+  كابل: 'CABLE',
+  كابلات: 'CABLE',
+  CHARGER: 'CHARGER',
+  CHARGERS: 'CHARGER',
+  'POWER BANK': 'CHARGER',
+  'POWER BANKS': 'CHARGER',
+  شاحن: 'CHARGER',
+  شواحن: 'CHARGER',
+  AUDIO: 'AUDIO',
+  EARBUDS: 'AUDIO',
+  HEADPHONES: 'AUDIO',
+  HEADSETS: 'AUDIO',
+  SPEAKERS: 'AUDIO',
+  صوتيات: 'AUDIO',
+  سماعات: 'AUDIO',
+  سماعة: 'AUDIO',
+  'PROTECTIVE SCREEN': 'PROTECTIVE SCREEN',
+  'PROTECTIVE SCREENS': 'PROTECTIVE SCREEN',
+  'SCREEN PROTECTOR': 'PROTECTIVE SCREEN',
+  'SCREEN PROTECTORS': 'PROTECTIVE SCREEN',
+  'حماية الشاشة': 'PROTECTIVE SCREEN',
+  'واقيات شاشة': 'PROTECTIVE SCREEN',
+  'واقي شاشة': 'PROTECTIVE SCREEN',
+};
+
+const normalizeCategory = (value) =>
+  String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toUpperCase();
 
 const colorAr = {
   Black: 'أسود',
@@ -100,23 +141,20 @@ const adAr = {
   'New iPhone 17 Collection': 'تشكيلة iPhone 17 الجديدة',
 };
 
-/** Localize a category label (e.g. "Phone Cases" ⇄ "جرابات"). */
-export function localizeCategory(name, lang) {
-  if (!name) return name;
-  return isArabic(lang) ? categoryToAr[name] || name : categoryToEn[name] || name;
+/** Map any known category label (canonical, legacy English or Arabic) to its canonical key. */
+export function canonicalCategory(label) {
+  const value = normalizeCategory(label);
+  if (!value) return '';
+  return CATEGORY_ALIASES[value] || '';
 }
 
-/**
- * Map a category label typed in the admin to its canonical stored value.
- * Known Arabic labels (e.g. "جرابات") become their English key ("Phone Cases") so
- * existing products keep matching; anything else is stored exactly as typed.
- */
-export function canonicalCategory(label) {
-  const value = String(label ?? '').trim();
-  for (const [en, ar] of categoryPairs) {
-    if (value === ar || value === en) return en;
-  }
-  return value;
+/** Localize a canonical/legacy category label for display (falls back to the input). */
+export function localizeCategory(name, lang) {
+  if (!name) return name;
+  const canonical = canonicalCategory(name);
+  const labels = CATEGORY_LABELS[canonical];
+  if (!labels) return name;
+  return isArabic(lang) ? labels.ar : labels.en;
 }
 
 /** Localize a color name (e.g. "Black" → "أسود"). */
