@@ -53,6 +53,45 @@ export function imageSrcSet(url, widths = [320, 480, 640], quality = 72) {
   return widths.map((width) => `${imageUrl(url, width, quality)} ${width}w`).join(', ');
 }
 
+/* ------------------------------------------------------------------ uploads */
+// Widths written by api/lib/images.php at upload time.
+export const CARD_IMAGE_WIDTHS = [400, 800];
+export const GALLERY_IMAGE_WIDTHS = [400, 800, 1600];
+export const THUMB_IMAGE_WIDTHS = [400];
+export const AD_IMAGE_WIDTHS = [800, 1600];
+
+const LOCAL_UPLOAD = /^\/uploads\/([A-Za-z0-9_-]+)\.(jpe?g|png|webp)$/i;
+
+/**
+ * Map a locally uploaded photo to the derivatives created by the API.
+ * Remote URLs, SVGs, GIFs and videos return null so the caller renders the
+ * original <img> instead.
+ */
+export function localImageVariants(url, widths = GALLERY_IMAGE_WIDTHS) {
+  if (!url || typeof url !== 'string') return null;
+
+  let pathname = url;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    pathname = parsed.pathname;
+  } catch {
+    return null;
+  }
+
+  const match = LOCAL_UPLOAD.exec(pathname);
+  if (!match) return null;
+
+  const stem = match[1];
+  const list = widths.length ? widths : GALLERY_IMAGE_WIDTHS;
+  const largest = list[list.length - 1];
+  return {
+    webp: list.map((w) => `/uploads/_opt/${stem}-${w}.webp ${w}w`).join(', '),
+    jpg: list.map((w) => `/uploads/_opt/${stem}-${w}.jpg ${w}w`).join(', '),
+    fallback: `/uploads/_opt/${stem}-${largest}.jpg`,
+  };
+}
+
 /**
  * Legacy static links in seeded ads (`/products.html`) point at the old
  * PHP pages and land on the React 404 page. Send those to the catalogue.

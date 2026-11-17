@@ -3,6 +3,7 @@ import { api } from '../../api/client.js';
 import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import { IconTrash, IconPlus, IconImage } from '../../components/icons.jsx';
+import { compressImage } from '../../lib/compressImage.js';
 
 const emptyForm = { title: '', mediaUrl: '', type: 'image', linkUrl: '', order: '0', active: true };
 
@@ -32,7 +33,7 @@ export default function Ads() {
     setUploading(true);
     try {
       const data = new FormData();
-      data.append('file', file);
+      data.append('file', await compressImage(file));
       const res = await api.upload('/api/upload.php', data);
       setForm((prev) => ({ ...prev, mediaUrl: res.url, type: res.type }));
     } catch (error) {

@@ -55,6 +55,11 @@ img, video {
   display: block;
 }
 
+/* <picture> is only a format selector — the <img> inside keeps the layout. */
+.responsive-image {
+  display: contents;
+}
+
 button {
   font: inherit;
   cursor: pointer;

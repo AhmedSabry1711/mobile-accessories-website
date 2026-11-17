@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import { money } from '../api/client.js';
+import { CARD_IMAGE_WIDTHS } from '../lib/media.js';
 import { localizeProduct } from '../i18n/catalog.js';
+import ResponsiveImage from './ResponsiveImage.jsx';
 import { IconHeart, IconCart } from './icons.jsx';
 
 export default function ProductCard({ product }) {
@@ -57,7 +59,14 @@ export default function ProductCard({ product }) {
       <div className="product-media">
         <Link to={`/products/${product.id}`} className="product-media-link">
           {product.image && !imageFailed ? (
-            <img src={product.image} alt={display.name} loading="lazy" onError={() => setImageFailed(true)} />
+            <ResponsiveImage
+              src={product.image}
+              alt={display.name}
+              widths={CARD_IMAGE_WIDTHS}
+              sizes="(max-width: 600px) 45vw, (max-width: 1024px) 30vw, 280px"
+              loading="lazy"
+              onError={() => setImageFailed(true)}
+            />
           ) : (
             <div className="product-placeholder">{t('common.noImage')}</div>
           )}

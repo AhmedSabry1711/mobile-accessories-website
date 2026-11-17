@@ -5,6 +5,8 @@ import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
 import { IconTruck, IconPhone, IconShield, IconBox } from '../components/icons.jsx';
 import { loadCustomer } from '../lib/customer.js';
+import ResponsiveImage from '../components/ResponsiveImage.jsx';
+import { THUMB_IMAGE_WIDTHS } from '../lib/media.js';
 
 export default function OrderSuccess() {
   const { orderNumber } = useParams();
@@ -39,7 +41,16 @@ export default function OrderSuccess() {
               {order.items.map((item, index) => (
                 <div key={index} className="checkout-line">
                   <div className="checkout-line-media">
-                    {item.image ? <img src={item.image} alt={localizeName(item.name, lang)} /> : <div className="product-placeholder" />}
+                    {item.image ? (
+                      <ResponsiveImage
+                        src={item.image}
+                        alt={localizeName(item.name, lang)}
+                        widths={THUMB_IMAGE_WIDTHS}
+                        sizes="72px"
+                      />
+                    ) : (
+                      <div className="product-placeholder" />
+                    )}
                     <span className="checkout-qty">{item.qty}</span>
                   </div>
                   <div className="checkout-line-info">

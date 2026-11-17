@@ -6,6 +6,8 @@ import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
 import { useCouponAutoApply } from '../lib/useCouponAutoApply.js';
 import { IconTrash, IconMinus, IconPlus, IconTruck } from '../components/icons.jsx';
+import ResponsiveImage from '../components/ResponsiveImage.jsx';
+import { THUMB_IMAGE_WIDTHS } from '../lib/media.js';
 
 export default function Cart() {
   const {
@@ -113,7 +115,12 @@ export default function Cart() {
               <article key={`${item.productId}|${item.model}|${item.color}`} className="cart-item">
                 <Link to={`/products/${item.productId}`} className="cart-item-media">
                   {item.image ? (
-                    <img src={item.image} alt={localizeName(item.name, lang)} />
+                    <ResponsiveImage
+                      src={item.image}
+                      alt={localizeName(item.name, lang)}
+                      widths={THUMB_IMAGE_WIDTHS}
+                      sizes="92px"
+                    />
                   ) : (
                     <div className="product-placeholder" />
                   )}

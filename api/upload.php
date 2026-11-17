@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
+require __DIR__ . '/lib/images.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     fail('Method not allowed', 405);
@@ -52,4 +53,12 @@ if (!move_uploaded_file($file['tmp_name'], $destination)) {
     fail('Could not save the uploaded file', 500);
 }
 
-ok(['url' => $CONFIG['uploadUrl'] . '/' . $filename, 'type' => str_starts_with($mime, 'video/') ? 'video' : 'image']);
+// Build the small WebP/JPEG variants the storefront uses. A missing GD/WebP
+// extension only skips the optimisation — the original file still works.
+$optimized = mb_img_generate_variants($destination);
+
+ok([
+    'url' => $CONFIG['uploadUrl'] . '/' . $filename,
+    'type' => str_starts_with($mime, 'video/') ? 'video' : 'image',
+    'optimized' => $optimized > 0,
+]);

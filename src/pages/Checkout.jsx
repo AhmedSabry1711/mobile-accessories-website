@@ -6,6 +6,8 @@ import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
 import { useCouponAutoApply } from '../lib/useCouponAutoApply.js';
 import { loadCustomer, saveCustomer } from '../lib/customer.js';
+import ResponsiveImage from '../components/ResponsiveImage.jsx';
+import { THUMB_IMAGE_WIDTHS } from '../lib/media.js';
 
 export default function Checkout() {
   const { cart, clearCart, toast, coupon, applyCoupon, removeCoupon } = useStore();
@@ -243,7 +245,16 @@ export default function Checkout() {
             {(calculation?.items || []).map((line) => (
               <div key={`${line.productId}|${line.model}|${line.color}`} className="checkout-line">
                 <div className="checkout-line-media">
-                  {line.image ? <img src={line.image} alt={localizeName(line.name, lang)} /> : <div className="product-placeholder" />}
+                  {line.image ? (
+                    <ResponsiveImage
+                      src={line.image}
+                      alt={localizeName(line.name, lang)}
+                      widths={THUMB_IMAGE_WIDTHS}
+                      sizes="72px"
+                    />
+                  ) : (
+                    <div className="product-placeholder" />
+                  )}
                   <span className="checkout-qty">{line.qty}</span>
                 </div>
                 <div className="checkout-line-info">

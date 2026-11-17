@@ -5,6 +5,7 @@ import { useStore } from '../../context/StoreContext.jsx';
 import { useUI } from '../../context/UIContext.jsx';
 import { IconPlus, IconTrash, IconImage } from '../../components/icons.jsx';
 import { CATEGORY_KEYS, canonicalCategory, localizeCategory } from '../../i18n/catalog.js';
+import { compressImage } from '../../lib/compressImage.js';
 
 const emptyColor = () => ({ name: '', hex: '#2563eb', stock: 0, image: '' });
 const emptyVariant = () => ({ model: '', colors: [emptyColor()] });
@@ -200,7 +201,7 @@ export default function ProductForm() {
     setUploading(true);
     try {
       const data = new FormData();
-      data.append('file', file);
+      data.append('file', await compressImage(file));
       const res = await api.upload('/api/upload.php', data);
       return res.url;
     } catch (error) {

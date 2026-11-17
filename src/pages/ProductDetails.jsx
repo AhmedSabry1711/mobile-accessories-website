@@ -5,6 +5,8 @@ import { useStore } from '../context/StoreContext.jsx';
 import { useUI } from '../context/UIContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import ModelTabs from '../components/ModelTabs.jsx';
+import ResponsiveImage from '../components/ResponsiveImage.jsx';
+import { GALLERY_IMAGE_WIDTHS, THUMB_IMAGE_WIDTHS } from '../lib/media.js';
 import { localizeColor, localizeProduct } from '../i18n/catalog.js';
 import RatingStars from '../components/RatingStars.jsx';
 import { IconHeart, IconCart, IconMinus, IconPlus, IconStar } from '../components/icons.jsx';
@@ -187,7 +189,14 @@ export default function ProductDetails() {
         <div className="gallery">
           <div className="gallery-main">
             {mainImage && mainImage !== brokenImage ? (
-              <img src={mainImage} alt={display.name} onError={() => setBrokenImage(mainImage)} />
+              <ResponsiveImage
+                src={mainImage}
+                alt={display.name}
+                widths={GALLERY_IMAGE_WIDTHS}
+                sizes="(max-width: 1024px) 92vw, 560px"
+                loading="eager"
+                onError={() => setBrokenImage(mainImage)}
+              />
             ) : (
               <div className="product-placeholder">{t('common.noImage')}</div>
             )}
@@ -206,7 +215,13 @@ export default function ProductDetails() {
                     setColorImage(null);
                   }}
                 >
-                  <img src={image} alt={`${display.name} ${index + 1}`} onError={() => setBrokenImage(image)} />
+                  <ResponsiveImage
+                    src={image}
+                    alt={`${display.name} ${index + 1}`}
+                    widths={THUMB_IMAGE_WIDTHS}
+                    sizes="74px"
+                    onError={() => setBrokenImage(image)}
+                  />
                 </button>
               ))}
             </div>

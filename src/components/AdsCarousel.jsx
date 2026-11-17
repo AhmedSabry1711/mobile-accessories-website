@@ -2,6 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext.jsx';
 import { localizeAdTitle } from '../i18n/catalog.js';
+import ResponsiveImage from './ResponsiveImage.jsx';
+import { AD_IMAGE_WIDTHS } from '../lib/media.js';
 
 /**
  * Hero Ads — an endless card train.
@@ -84,9 +86,11 @@ export default function AdsCarousel({ ads = [] }) {
                 ad.type === 'video' ? (
                   <video src={ad.mediaUrl} autoPlay muted loop playsInline preload="metadata" />
                 ) : (
-                  <img
+                  <ResponsiveImage
                     src={ad.mediaUrl}
                     alt={localizeAdTitle(ad.title, lang)}
+                    widths={AD_IMAGE_WIDTHS}
+                    sizes="(max-width: 900px) 100vw, 1200px"
                     loading={index < 4 ? 'eager' : 'lazy'}
                   />
                 );

@@ -6,6 +6,8 @@ import { useUI } from '../context/UIContext.jsx';
 import { localizeColor, localizeName } from '../i18n/catalog.js';
 import { loadCustomer } from '../lib/customer.js';
 import { IconBox, IconTruck, IconClose, IconWhatsApp } from '../components/icons.jsx';
+import ResponsiveImage from '../components/ResponsiveImage.jsx';
+import { THUMB_IMAGE_WIDTHS } from '../lib/media.js';
 
 /** Happy-path statuses, in the order they happen. */
 const FLOW = ['pending', 'confirmed', 'processing', 'completed'];
@@ -216,7 +218,7 @@ export default function TrackOrder() {
               {order.items.map((item, index) => (
                 <li className="track-item" key={`${item.productId}-${index}`}>
                   {item.image ? (
-                    <img src={item.image} alt="" loading="lazy" />
+                    <ResponsiveImage src={item.image} alt="" widths={THUMB_IMAGE_WIDTHS} sizes="72px" />
                   ) : (
                     <span className="track-item-noimg">
                       <IconBox size={18} />
