@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, money } from '../api/client.js';
 import { useStore } from '../context/StoreContext.jsx';
@@ -31,6 +31,8 @@ export default function ProductDetails() {
 
   const [reviewForm, setReviewForm] = useState({ userName: '', rating: 5, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  const touchStart = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -99,6 +101,44 @@ export default function ProductDetails() {
     setSelectedColor(color.name);
     setColorImage(color.image || null);
     setQty(1);
+  };
+
+  // --- gallery swipe (mobile) ------------------------------------------------
+  // Move between gallery photos with a horizontal flick. A vertical drag is
+  // left alone so the page still scrolls normally (touch-action: pan-y in CSS).
+  const galleryCount = product?.images?.length
+    ? product.images.length
+    : product?.image
+      ? 1
+      : 0;
+
+  const swipeImage = (direction) => {
+    if (galleryCount < 2) return;
+    if (colorImage) {
+      // The selected colour image sits outside the gallery: step into it.
+      setColorImage(null);
+      setActiveImage(direction > 0 ? 0 : galleryCount - 1);
+      return;
+    }
+    setActiveImage((prev) => (prev + direction + galleryCount) % galleryCount);
+  };
+
+  const onGalleryTouchStart = (event) => {
+    const touch = event.touches[0];
+    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  };
+
+  const onGalleryTouchEnd = (event) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    // Ignore short taps and mostly-vertical gestures.
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+    swipeImage(dx < 0 ? 1 : -1);
   };
 
   // Returns true when the line was actually added, so "Buy now" only navigates
@@ -187,7 +227,11 @@ export default function ProductDetails() {
 
       <div className="product-main">
         <div className="gallery">
-          <div className="gallery-main">
+          <div
+            className="gallery-main"
+            onTouchStart={onGalleryTouchStart}
+            onTouchEnd={onGalleryTouchEnd}
+          >
             {mainImage && mainImage !== brokenImage ? (
               <ResponsiveImage
                 src={mainImage}
@@ -202,6 +246,11 @@ export default function ProductDetails() {
             )}
             {product.discountPercent > 0 && (
               <span className="badge badge-sale">-{product.discountPercent}%</span>
+            )}
+            {galleryCount > 1 && (
+              <span className="gallery-count" aria-hidden="true">
+                {colorImage ? '•' : activeImage + 1} / {galleryCount}
+              </span>
             )}
           </div>
           {images.length > 1 && (

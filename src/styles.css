@@ -1236,6 +1236,9 @@ code {
   background: #f1f5f9;
   aspect-ratio: 1 / 1;
   border: 1px solid var(--line);
+  /* Let the browser keep vertical page scrolling; horizontal drags are handled
+     by the swipe handlers in ProductDetails.jsx. */
+  touch-action: pan-y;
 }
 
 .gallery-main img {
@@ -1244,6 +1247,23 @@ code {
   height: 100%;
   max-width: 100%;
   object-fit: contain;
+}
+
+/* Small "1 / 3" hint shown while swiping the gallery on touch screens. */
+.gallery-count {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.65);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  pointer-events: none;
+  user-select: none;
 }
 
 .gallery-thumbs {
@@ -3312,6 +3332,32 @@ code {
 
   .price-old {
     font-size: 0.78rem;
+  }
+
+  /* Product gallery: swipeable main image (handled in JS) plus a horizontal,
+     snap-scrolling filmstrip of thumbnails that never wraps or overflows. */
+  .gallery-main {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .gallery-thumbs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .gallery-thumbs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .thumb {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
   }
 
   .reviews-summary {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext.jsx';
 import { localizeAdTitle } from '../i18n/catalog.js';
 import ResponsiveImage from './ResponsiveImage.jsx';
+import AdVideo from './AdVideo.jsx';
 import { AD_IMAGE_WIDTHS } from '../lib/media.js';
 
 /**
@@ -84,7 +85,7 @@ export default function AdsCarousel({ ads = [] }) {
             {loop.map(({ ad, copy }, index) => {
               const media =
                 ad.type === 'video' ? (
-                  <video src={ad.mediaUrl} autoPlay muted loop playsInline preload="metadata" />
+                  <AdVideo src={ad.mediaUrl} label={localizeAdTitle(ad.title, lang)} />
                 ) : (
                   <ResponsiveImage
                     src={ad.mediaUrl}
